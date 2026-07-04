@@ -2,6 +2,7 @@
 
 import os
 import sys
+import csv
 import pickle
 import argparse
 import functools
@@ -385,6 +386,16 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     out = os.path.join(plots, f"loss_curve_distilled_student_{mark_version}.png")
     plt.savefig(out)
     print(f"[INFO] Saved loss curve: {out}")
+
+    # [추가] 손실곡선 raw 숫자를 CSV로도 저장. PNG만 있으면 다른 모델(CED-Tiny 등)과
+    # 겹쳐 그리는 비교 그래프를 다시 만들 수 없어서, 비교 실험용으로 숫자 그대로 남긴다.
+    loss_history_csv = os.path.join(plots, f"loss_history_{mark_version}.csv")
+    with open(loss_history_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["epoch", "train_total", "val_total"])
+        for i in range(len(tr_hist)):
+            writer.writerow([i + 1, tr_hist[i], vl_hist[i]])
+    print(f"[INFO] 손실곡선 CSV 저장: {loss_history_csv}")
     print(f"[INFO] Best saved: {enc_path}, {head_path} (val loss {stopper.val_loss_min:.6f})")
     save_checkpoint(
         os.path.join(SCRIPT_DIR, f"student_checkpoint_{config.mark_version}.pt"),

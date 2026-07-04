@@ -298,6 +298,13 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
     else:
         rocA = roc_auc_score(y_true, y_prob, multi_class='ovr', average='macro')
 
+    # [추가] others FPR: 실제 라벨이 "others"인데 타겟 클래스로 오분류된 비율 (= 1 - Recall(others)).
+    others_idx = cls.index("others")
+    others_row = cm[others_idx]
+    others_row_sum = int(others_row.sum())
+    others_fpr = float((others_row_sum - others_row[others_idx]) / others_row_sum) if others_row_sum > 0 else float('nan')
+    print(f"[others FPR] 실제 others인데 타겟 클래스로 오분류된 비율: {others_fpr:.4f}")
+
     print("\n" + "="*30)
     print(f"      성능 평가 결과 ({mark_version})")
     print("="*30)
@@ -330,8 +337,8 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
     csv_path = os.path.join(plot_dir, f'performance_summary_{mark_version}.csv')
     with open(csv_path, 'w', newline='', encoding='utf-8') as f:
         f.write(f"# Performance Summary for {mark_version}\n\n")
-        pd.DataFrame({'Metric':['Accuracy','ROC AUC' if ncls==2 else 'ROC AUC (Macro)'],
-                      'Score':[acc, rocA if isinstance(rocA,float) else 'N/A']}).to_csv(f, index=False)
+        pd.DataFrame({'Metric':['Accuracy','ROC AUC' if ncls==2 else 'ROC AUC (Macro)', 'Others FPR'],
+                      'Score':[acc, rocA if isinstance(rocA,float) else 'N/A', others_fpr]}).to_csv(f, index=False)
         f.write("\n# Class-wise Metrics\n\n")
         pd.DataFrame({'Class':cls,'Precision':pre,'Recall':rec,'F1-Score':f1}).to_csv(f, index=False)
     print(f"[INFO] 성능 요약 CSV 저장: {csv_path}")
