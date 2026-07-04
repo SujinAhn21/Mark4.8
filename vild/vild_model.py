@@ -98,4 +98,20 @@ class ViLDTextHead(nn.Module):
         logits = torch.matmul(region_norm, text_norm.T)  # [B, C]
         logits = logits / self.temperature
         return logits
-    
+
+
+class LearnableBackgroundEmbedding(nn.Module):
+    """
+    "others"(배경) 클래스를 위한 학습형 임베딩
+
+    - 텍스트 프롬프트가 아닌 학습 파라미터로 배경 임베딩을 직접 학습
+    - 평가 시 cosine similarity 기반 로짓을 "others" 로짓과 max-override 방식으로 결합
+    """
+
+    def __init__(self, embedding_dim):
+        super().__init__()
+        self.background_emb = nn.Parameter(torch.randn(embedding_dim) * 0.01)
+
+    def forward(self):
+        return self.background_emb
+

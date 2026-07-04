@@ -11,6 +11,7 @@ Mark4.x / Mark5.0 공통 Checkpoint 저장/로드 유틸리티.
   branch_state_dict : OrderedDict | None
   classifier_state_dict : OrderedDict | None
   text_embeddings   : Tensor | None
+  background_embedding_state_dict : OrderedDict | None
 """
 
 import os
@@ -58,6 +59,7 @@ def save_checkpoint(
     classifier_state=None,
     text_embeddings=None,
     config=None,
+    background_embedding_state=None,
 ):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     payload = {
@@ -69,6 +71,7 @@ def save_checkpoint(
         "branch_state_dict": branch_state,
         "classifier_state_dict": classifier_state,
         "text_embeddings": text_embeddings,
+        "background_embedding_state_dict": background_embedding_state,
     }
     torch.save(payload, path)
 

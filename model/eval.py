@@ -5,6 +5,7 @@
 # sampled_files = []; per_class_max = 30; class_counter = defaultdict(int); ...
 """
 import os, sys, csv, glob, torch
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np, pandas as pd, argparse
@@ -21,7 +22,7 @@ for p in (PROJECT_ROOT, UTILS_DIR, VILD_DIR):
     if p not in sys.path: sys.path.append(p)
 
 from vild_config import AudioViLDConfig
-from vild_model import SimpleAudioEncoder, ViLDTextHead
+from vild_model import SimpleAudioEncoder, ViLDTextHead, LearnableBackgroundEmbedding
 from vild_head import DualBranchStudentHead
 from vild_parser_student import AudioParser
 from seed_utils import set_seed
@@ -193,6 +194,32 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
     branch_head.load_state_dict(resolve_state_dict(head_ckpt, "branch_state_dict", "head_state_dict", "head"), strict=False)
     enc.eval(); branch_head.eval(); head.eval()
 
+    background_embedding = None
+    if getattr(config, "use_background_embedding", False):
+        # [수정] background_embedding은 head_ckpt(EarlyStopping이 encoder/head와 같은 시점에
+        # 저장한 파일)에서 읽는다. 별도 체크포인트(학습 종료 시점=마지막 epoch)에서 읽으면
+        # early stopping으로 encoder/head가 더 이른 epoch에 고정된 경우 서로 다른 epoch의
+        # 파라미터가 짝지어지는 버그가 생기기 때문.
+        bg_state = head_ckpt.get("background_embedding_state_dict")
+        if bg_state is not None:
+            background_embedding = LearnableBackgroundEmbedding(config.embedding_dim).to(device)
+            background_embedding.load_state_dict(bg_state)
+            background_embedding.eval()
+        else:
+            print(
+                "[WARN] background_embedding_state_dict를 찾지 못했습니다 "
+                f"(checkpoint: {head_path}). 옛 체크포인트로 간주하고 background embedding 보정을 건너뜁니다."
+            )
+
+    def _apply_background_override(logits, features):
+        others_idx = cls.index("others")
+        region_norm = F.normalize(features, dim=1)
+        bg_norm = F.normalize(background_embedding(), dim=0)
+        bg_logit = (region_norm @ bg_norm) / head.temperature
+        logits = logits.clone()
+        logits[:, others_idx] = torch.maximum(logits[:, others_idx], bg_logit)
+        return logits
+
     y_true, y_pred, y_prob, paths = [], [], [], []
     raw_y_pred, raw_y_prob = [], []
     calibration_logs = []
@@ -210,9 +237,17 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
                 if seg.ndim == 3: seg = seg.unsqueeze(0)
                 seg = seg.to(device)
                 feat = enc(seg)
-                supervised_features, _ = branch_head(feat)
-                logits = head(supervised_features, text_emb)
-                prob = torch.softmax(logits, dim=-1).squeeze(0)
+                supervised_features, distill_features = branch_head(feat)
+                sup_logits = head(supervised_features, text_emb)
+                distill_logits = head(distill_features, text_emb)
+                if background_embedding is not None:
+                    sup_logits = _apply_background_override(sup_logits, supervised_features)
+                    distill_logits = _apply_background_override(distill_logits, distill_features)
+                w = getattr(config, "distill_branch_eval_weight", 0.5)
+                prob = (
+                    (1 - w) * torch.softmax(sup_logits, dim=-1)
+                    + w * torch.softmax(distill_logits, dim=-1)
+                ).squeeze(0)
                 segment_probs.append(prob.cpu().numpy())
                 saliency_scores.append(_compute_segment_saliency(seg.cpu()))
         if not segment_probs:

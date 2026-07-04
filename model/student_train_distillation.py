@@ -26,7 +26,7 @@ for p in (PROJECT_ROOT, VILD_DIR, UTILS_DIR):
         sys.path.append(p)
 
 from vild_config import AudioViLDConfig
-from vild_model import SimpleAudioEncoder, ViLDTextHead
+from vild_model import SimpleAudioEncoder, ViLDTextHead, LearnableBackgroundEmbedding
 from vild_head import DualBranchStudentHead
 from vild_parser_student import AudioParser
 from seed_utils import set_seed
@@ -49,11 +49,11 @@ class EarlyStopping:
         self.path_head = path_head
         self.mark_version = mark_version
 
-    def __call__(self, val_loss, encoder, head):
+    def __call__(self, val_loss, encoder, head, background_embedding=None):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self._save(val_loss, encoder, head)
+            self._save(val_loss, encoder, head, background_embedding)
         elif score < self.best_score + self.delta:
             self.counter += 1
             if self.verbose:
@@ -62,14 +62,21 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self._save(val_loss, encoder, head)
+            self._save(val_loss, encoder, head, background_embedding)
             self.counter = 0
 
-    def _save(self, val_loss, encoder, head):
+    def _save(self, val_loss, encoder, head, background_embedding=None):
         if self.verbose:
             print(f"[EarlyStopping] Val loss {self.val_loss_min:.6f} -> {val_loss:.6f}. Saving...")
         save_checkpoint(self.path_encoder, "student_encoder", self.mark_version, model_state=encoder.state_dict())
-        save_checkpoint(self.path_head, "student_branch", self.mark_version, branch_state=head.state_dict())
+        # [수정] background_embedding을 head와 같은 파일에, 같은 시점(best val epoch)에 저장.
+        # encoder/head는 best epoch에 저장되는데 background_embedding만 학습 종료 시점(마지막 epoch)에
+        # 별도 저장하면 서로 다른 epoch의 파라미터가 eval 시 짝지어지는 버그가 생기기 때문.
+        background_state = background_embedding.state_dict() if background_embedding is not None else None
+        save_checkpoint(
+            self.path_head, "student_branch", self.mark_version,
+            branch_state=head.state_dict(), background_embedding_state=background_state,
+        )
         self.val_loss_min = val_loss
 
 
@@ -249,6 +256,10 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     text_head = ViLDTextHead(config).to(device)
     text_emb = config.get_class_text_embeddings().to(device)
 
+    background_embedding = None
+    if config.use_background_embedding:
+        background_embedding = LearnableBackgroundEmbedding(config.embedding_dim).to(device)
+
     T = 4.0
     alpha = 0.7
     crit = DistillationLoss(
@@ -257,8 +268,11 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
         feature_kd_weight=config.feature_kd_weight if config.use_feature_kd else 0.0,
         ignore_index=-1,
     )
+    opt_params = list(encoder.parameters()) + list(branch_head.parameters())
+    if background_embedding is not None:
+        opt_params += list(background_embedding.parameters())
     opt = optim.Adam(
-        list(encoder.parameters()) + list(branch_head.parameters()),
+        opt_params,
         lr=config.learning_rate,
     )
     sched = ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=3)
@@ -293,6 +307,16 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
             supervised_features, distill_features = branch_head(base_features)
             logits = text_head(supervised_features, text_emb)
             losses = crit(logits, sb, hb, student_features=distill_features, teacher_features=fb)
+
+            if config.use_background_embedding and background_embedding is not None:
+                others_idx = config.get_classes_for_text_prompts().index("others")
+                valid = hb != -1
+                others_mask = valid & (hb == others_idx)
+                if others_mask.any():
+                    target_feat = F.normalize(supervised_features[others_mask], dim=1)
+                    bg = F.normalize(background_embedding(), dim=0).unsqueeze(0).expand_as(target_feat)
+                    bg_loss = (1 - F.cosine_similarity(target_feat, bg, dim=1)).mean()
+                    losses["total"] = losses["total"] + config.background_embedding_weight * bg_loss
 
             opt.zero_grad()
             losses["total"].backward()
@@ -336,7 +360,7 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
             f"Feat {total_f / max(1, len(val_loader)):.6f}"
         )
 
-        stopper(vl, encoder, branch_head)
+        stopper(vl, encoder, branch_head, background_embedding)
         if stopper.early_stop:
             print("[INFO] Early stopping.")
             break
@@ -369,6 +393,11 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
         model_state=encoder.state_dict(),
         branch_state=branch_head.state_dict(),
         classifier_state=text_head.state_dict(),
+        background_embedding_state=(
+            background_embedding.state_dict()
+            if (config.use_background_embedding and background_embedding is not None)
+            else None
+        ),
     )
 
 

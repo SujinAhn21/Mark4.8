@@ -60,6 +60,8 @@ class AudioViLDConfig:
         # === 모델 파라미터 ===
         self.embedding_dim = 384
         self.use_background_embedding = True
+        self.background_embedding_weight = 0.1
+        self.distill_branch_eval_weight = 0.5
         self.use_text_aligned_student = True
         self.use_feature_kd = True
         self.feature_kd_weight = 0.3
