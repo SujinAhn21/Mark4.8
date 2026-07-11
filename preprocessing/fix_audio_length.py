@@ -9,9 +9,15 @@ import argparse
 from tqdm import tqdm
 
 # === 인자 parsing: default 값을 None으로 변경하여 인자 전달 여부 확인 ===
-# [변경 2026-07-11] 5초(80,000샘플) -> 15초(240,000샘플). mark5의 fix_audio_length_to_240000.py와
-# 목표 길이를 통일(기존엔 mark4=5초/mark5=15초로 서로 달라 teacher/student 전처리 전제가 어긋나 있었음).
-parser = argparse.ArgumentParser(description="오디오 파일 길이를 15초(240000 샘플)로 고정합니다.") # 전처리.
+# [변경 2026-07-11] "N초로 강제 통일(자르기+패딩)" -> "최소 길이만 보장(패딩만, 자르지 않음)"으로 재설계.
+# 이유: 파서(vild_parser_common.py)가 세그먼트 단위(1초 창, 0.5초 stride)로 salient_topk 5개를 뽑도록
+# 이미 자체 정규화하고 있어서, 원본 클립 길이를 사전에 통일할 구조적 이유가 없음. 오히려 예전 방식(15초로
+# 자르기)은 15초 넘는 클립의 뒷부분을 통째로 버려 타겟 소리가 잘려나가는 실제 버그였음(FSD50K 실측:
+# 15초 초과 클립 17.6%). 반대로 너무 짧으면 파서가 파일을 통째로 버리거나(1.01초 미만) 세그먼트를
+# 5개 못 채워 마지막 세그먼트를 복제하는 열화 폴백이 걸림 -> 최소 길이 보장만 하고 자르기는 없앰.
+parser = argparse.ArgumentParser(
+    description="오디오 파일이 최소 3초(48000 샘플) 미만이면 무음 패딩으로 채웁니다(자르기 없음)."
+)  # 전처리.
 parser.add_argument("--mark_version", type=str, default=None, 
                     help="모델 버전 (예: mark4.1). 이 버전에 따라 입/출력 폴더가 결정됩니다.")
 args = parser.parse_args()
@@ -22,7 +28,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # === 보정 파라미터 ===
 TARGET_SAMPLE_RATE = 16000 # sample rate 도 제한을 해서 주파수 해상도를 일정하게 맞추기
-TARGET_NUM_SAMPLES = TARGET_SAMPLE_RATE * 15  # 240,000 samples (15초 기준, mark5와 통일)
+# [변경 2026-07-11] TARGET_NUM_SAMPLES(강제 통일 길이) -> TARGET_MIN_SAMPLES(최소 보장 길이)로 의미 변경.
+# 근거: vild_config.py 기준 segment_length=101프레임, segment_hop=50프레임, max_segments=5.
+# salient_topk가 "서로 다른" 5개 세그먼트를 뽑으려면 최소 101 + 4*50 = 301프레임이 필요하고,
+# hop_length=160/sample_rate=16000이므로 301프레임 = 300*160 = 48,000샘플(정확히 3.0초).
+# 이보다 짧으면 세그먼트가 5개 미만이라 파서가 마지막 세그먼트를 복제해 채우는 폴백이 걸림(열화).
+TARGET_MIN_SAMPLES = 16000 * 3  # 48,000 samples (3.0초 = 5개 서로 다른 세그먼트를 보장하는 최소 길이)
 
 def fix_wav_length(wav_path, save_path):
     try:
@@ -33,12 +44,10 @@ def fix_wav_length(wav_path, save_path):
             resample = torchaudio.transforms.Resample(orig_freq=sr, new_freq=TARGET_SAMPLE_RATE)
             waveform = resample(waveform)
 
-        # 자르기 or 패딩
+        # [변경] 짧으면 최소 길이까지만 무음 패딩. 길어도 자르지 않음(뒷부분 소리 소실 방지).
         num_samples = waveform.shape[1]
-        if num_samples > TARGET_NUM_SAMPLES:
-            fixed_waveform = waveform[:, :TARGET_NUM_SAMPLES]
-        elif num_samples < TARGET_NUM_SAMPLES:
-            pad_len = TARGET_NUM_SAMPLES - num_samples
+        if num_samples < TARGET_MIN_SAMPLES:
+            pad_len = TARGET_MIN_SAMPLES - num_samples
             pad_tensor = torch.zeros((waveform.shape[0], pad_len))
             fixed_waveform = torch.cat([waveform, pad_tensor], dim=1)
         else:
