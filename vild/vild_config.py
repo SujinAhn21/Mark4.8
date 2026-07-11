@@ -1,5 +1,6 @@
 # vild_config.py
 
+import math
 import torch
 from sentence_transformers import SentenceTransformer
 import os
@@ -61,9 +62,9 @@ class AudioViLDConfig:
 
         # === 모델 파라미터 ===
         self.embedding_dim = 384
-        self.use_background_embedding = True
+        self.use_background_embedding = True  # [원복 2026-07-11] 진단(False)했으나 collapse 원인 아님(가설 기각). 진짜 원인은 others_entropy_threshold(아래) 발견.
         self.background_embedding_weight = 0.1
-        self.distill_branch_eval_weight = 0.5
+        self.distill_branch_eval_weight = 0.5  # [원복 2026-07-11] 진단(0)했으나 collapse 원인 아님(가설 기각).
         self.use_text_aligned_student = True
         self.use_feature_kd = True
         self.feature_kd_weight = 0.3
@@ -72,12 +73,22 @@ class AudioViLDConfig:
         self.segment_selection_mode = "salient_topk"
         self.max_visual_segments = self.max_segments
         self.logit_temperature = 0.07
-        self.segment_aggregation_mode = "confidence_saliency"
+        self.segment_aggregation_mode = "confidence_saliency"  # [원복 2026-07-11] 진단("mean")했으나 collapse 원인 아님(가설 기각).
         self.segment_confidence_power = 2.0
         self.segment_saliency_power = 1.0
         self.others_confidence_threshold = 0.60
         self.others_margin_threshold = 0.08
-        self.others_entropy_threshold = 0.72
+        # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
+        # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
+        # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).
+        # 반면 confidence_threshold는 0.60으로 설정돼 있어, entropy 조건이 confidence 조건보다
+        # 훨씬 엄격하게 어긋나 있었음 -> confidence>=0.60인 예측도 실제 top_conf가 0.78 정도까지밖에
+        # 안 나오는 mark4.8 실측 분포에서는 entropy 조건에 걸려 100% "others"로 강제 override됨
+        # (confusion matrix가 항상 others로만 나오는 근본 원인이었음).
+        # 아래 property로 대체: confidence_threshold와 "같은 엄격도(같은 top_conf 지점)"가 되도록
+        # 클래스 수 기반으로 자동 역산. mark5(9-class)는 기존 하드코딩값(0.82)이 우연히 이미
+        # confidence_threshold(0.45)와 거의 같은 엄격도였어서(top_conf≈0.47 지점) 이 변경으로도
+        # 동작이 거의 그대로 유지됨. mark4.x는 entropy 조건이 confidence 조건과 정합하게 완화됨.
         self.explain_topk_segments = 3
         self.save_visual_explanations = True
 
@@ -130,6 +141,24 @@ class AudioViLDConfig:
 
     def get_target_label_map(self) -> dict:
         return {class_name: i for i, class_name in enumerate(self.get_classes_for_text_prompts())}
+
+    @property
+    def others_entropy_threshold(self) -> float:
+        """
+        [추가 2026-07-11] others_confidence_threshold와 "같은 엄격도(같은 top_conf 지점)"가
+        되도록 클래스 수 기반으로 자동 역산한다. top_conf=confidence_threshold이고 나머지
+        확률이 (클래스수-1)개에 균등분산되는 최악의 경우를 가정해 그때의 정규화 entropy를
+        threshold로 삼는다. 클래스 수가 다른 mark_version 사이에서 entropy 조건이
+        confidence 조건보다 부당하게 엄격/느슨해지는 것을 방지한다.
+        """
+        p = self.others_confidence_threshold
+        n = self.num_distinct_labeled_classes
+        if n <= 1:
+            return 1.0
+        rest = 1.0 - p
+        probs = [p] + [rest / (n - 1)] * (n - 1)
+        entropy = -sum(x * math.log(x, 2) for x in probs if x > 1e-12)
+        return entropy / math.log2(n)
 
     @property
     def num_input_channels(self) -> int:
