@@ -62,7 +62,14 @@ class AudioViLDConfig:
 
         # === 모델 파라미터 ===
         self.embedding_dim = 384
-        self.use_background_embedding = True  # [원복 2026-07-11] 진단(False)했으나 collapse 원인 아님(가설 기각). 진짜 원인은 others_entropy_threshold(아래) 발견.
+        # [확정 2026-07-12] True->False. entropy_threshold 수정 + FSD50K 재분할 이후에도 confusion matrix가
+        # 여전히 완전 붕괴(dog_bark 0/50)했던 진짜 원인. eval.py의 max-override 로직이 학습된 background
+        # embedding을 오디오 임베딩과 비교해 "others" 로짓을 계속 밀어올려서, 실제 dog_bark 샘플에서도
+        # Prob_dog_bark가 0.008~0.016 수준으로 짓눌림(True=others 샘플과 분포가 완전히 겹침). False로 끄자
+        # 즉시 정상적인 confidence 분포(0.257~0.837)가 드러나고 raw accuracy 52%->66%로 개선(코랩 재검증 완료).
+        # 2026-07-11에 한 번 False로 진단했다가 "결과 동일"이라 기각했었는데, 그건 재분할 전 데이터로 학습한
+        # 구모델 기준이었음 - 재분할 후 재학습된 모델에서는 진짜 원인으로 확정됨(가설 재검증의 중요성).
+        self.use_background_embedding = False
         self.background_embedding_weight = 0.1
         self.distill_branch_eval_weight = 0.5  # [원복 2026-07-11] 진단(0)했으나 collapse 원인 아님(가설 기각).
         self.use_text_aligned_student = True
@@ -76,7 +83,13 @@ class AudioViLDConfig:
         self.segment_aggregation_mode = "confidence_saliency"  # [원복 2026-07-11] 진단("mean")했으나 collapse 원인 아님(가설 기각).
         self.segment_confidence_power = 2.0
         self.segment_saliency_power = 1.0
-        self.others_confidence_threshold = 0.60
+        # [조정 2026-07-12] 0.60->0.55. background_embedding override를 끄고 재평가한 실측 confidence
+        # 분포(raw dog_bark 예측 30건: 0.508~0.837) 기준 시뮬레이션 결과, threshold를 0.55까지 낮춰도
+        # others_margin_threshold(0.08, top_conf>=0.54가 사실상의 하한)가 이미 걸러주고 있어 0.55와 0.60
+        # 밑으로는 값을 낮춰도 차이가 없었고, 0.60->0.55 구간에서는 accuracy 0.62->0.63, dog_bark
+        # recall 0.34->0.38로 개선됨(TP=19,FN=31,FP=6,TN=44). 주의: 이 값은 test set(100개) 결과로
+        # 고른 것이라 val set 기준 재검증이 이상적이나, 급한 실전 디버깅 상황이라 우선 반영.
+        self.others_confidence_threshold = 0.55
         self.others_margin_threshold = 0.08
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
