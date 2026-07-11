@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     # [변경] mark4.x 구조 대응 + 선택적 인자 처리
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mark_version', type=str, default="mark4.1")
+    parser.add_argument('--mark_version', type=str, required=True)
     parser.add_argument('--path', type=str, default=None, help="시각화할 오디오 파일 경로")
     args = parser.parse_args()
 

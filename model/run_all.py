@@ -9,7 +9,7 @@ import sys
 
 # ===== 파라미터 설정 =====
 parser = argparse.ArgumentParser(description="소음 분류 전체 학습 파이프라인 (지식 증류 포함)")
-parser.add_argument("--mark_version", type=str, default="mark4.1", help="실행할 모델 버전")  # change needed
+parser.add_argument("--mark_version", type=str, required=True, help="실행할 모델 버전")
 args = parser.parse_args()
 mark_version = args.mark_version
 

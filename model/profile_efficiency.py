@@ -133,7 +133,7 @@ def profile(mark_version: str, num_warmup: int = 10, num_runs: int = 100):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Mark specialist 모델의 파라미터 수·모델 용량·FLOPs·CPU 추론 지연시간을 측정합니다.")
-    parser.add_argument("--mark_version", type=str, default="mark4.1")
+    parser.add_argument("--mark_version", type=str, required=True)
     parser.add_argument("--num_warmup", type=int, default=10)
     parser.add_argument("--num_runs", type=int, default=100)
     args = parser.parse_args()

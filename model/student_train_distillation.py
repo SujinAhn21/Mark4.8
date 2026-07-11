@@ -418,6 +418,6 @@ def train_student(seed_value=42, mark_version="mark4.1"):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mark_version", type=str, default="mark4.1")
+    ap.add_argument("--mark_version", type=str, required=True)
     args = ap.parse_args()
     train_student_with_distillation(mark_version=args.mark_version)

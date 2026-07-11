@@ -205,7 +205,7 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mark_version", type=str, default="mark4.1")
+    parser.add_argument("--mark_version", type=str, required=True)
     args = parser.parse_args()
     train_teacher(seed_value=42, mark_version=args.mark_version)
     

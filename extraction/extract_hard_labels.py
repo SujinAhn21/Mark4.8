@@ -77,7 +77,7 @@ def extract_hard_labels(mark_version="mark4.1"):
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('--mark_version', type=str, default="mark4.1")
+    ap.add_argument('--mark_version', type=str, required=True)
     args = ap.parse_args()
     raise SystemExit(extract_hard_labels(args.mark_version))
     
