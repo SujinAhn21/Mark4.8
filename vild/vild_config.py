@@ -85,6 +85,10 @@ class AudioViLDConfig:
         self.batch_size = 16
         self.num_epochs = 80 # 100에서 80으로 줄임
         self.learning_rate = 1e-4
+        # [추가 2026-07-11] teacher_train.py의 EarlyStopping patience가 2로 하드코딩돼 있어
+        # num_epochs=80까지 갈 수 있는데도 val loss가 한 번만 반등해도 5epoch 안에 조기종료되던 버그.
+        # student(student_train_distillation.py의 EarlyStopping)와 동일하게 10으로 통일.
+        self.teacher_patience = 10
 
         self.text_loss_weight = 1.0
         self.image_loss_weight = 1.0

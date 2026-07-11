@@ -115,7 +115,10 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
 
     print(f"[INFO] Teacher training started for {mark_version} on {device}")
     best_val = float('inf')
-    patience, wait = 2, 0
+    # [수정 2026-07-11] patience=2 하드코딩 -> config.teacher_patience(기본 10)로 변경.
+    # num_epochs=80까지 돌 수 있는데 val loss가 한 번만 반등해도 5epoch 안에 조기종료되어,
+    # teacher가 제대로 수렴하기 전에 학습이 끝나버리는 버그였음(실측: mark4.8이 5epoch에서 멈춤).
+    patience, wait = getattr(config, "teacher_patience", 10), 0
     train_hist, val_hist = [], []
 
     text_emb = config.get_class_text_embeddings().to(device)
