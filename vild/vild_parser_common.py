@@ -59,10 +59,14 @@ class BaseAudioParser:
         self.amplitude_to_db = T.AmplitudeToDB()
         self.resampler_cache = {}
 
-        try:
-            torchaudio.set_audio_backend("soundfile")
-        except RuntimeError:
-            pass
+        # [수정 2026-07-11] torchaudio 최신버전(코랩 GPU 환경 등)에서 set_audio_backend가 아예
+        # 제거되어 AttributeError가 남 — RuntimeError만 잡던 기존 코드가 이를 못 잡고 죽었음(실측).
+        # 최신 torchaudio는 백엔드 자동선택이라 이 호출 자체가 불필요하므로, 있을 때만 시도한다.
+        if hasattr(torchaudio, "set_audio_backend"):
+            try:
+                torchaudio.set_audio_backend("soundfile")
+            except Exception:
+                pass
 
     def _to_visual_mel(self, waveform):
         mel = self.mel_transform(waveform)
