@@ -9,7 +9,9 @@ import argparse
 from tqdm import tqdm
 
 # === 인자 parsing: default 값을 None으로 변경하여 인자 전달 여부 확인 ===
-parser = argparse.ArgumentParser(description="오디오 파일 길이를 5초(80000 샘플)로 고정합니다.") # 전처리.
+# [변경 2026-07-11] 5초(80,000샘플) -> 15초(240,000샘플). mark5의 fix_audio_length_to_240000.py와
+# 목표 길이를 통일(기존엔 mark4=5초/mark5=15초로 서로 달라 teacher/student 전처리 전제가 어긋나 있었음).
+parser = argparse.ArgumentParser(description="오디오 파일 길이를 15초(240000 샘플)로 고정합니다.") # 전처리.
 parser.add_argument("--mark_version", type=str, default=None, 
                     help="모델 버전 (예: mark4.1). 이 버전에 따라 입/출력 폴더가 결정됩니다.")
 args = parser.parse_args()
@@ -20,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # === 보정 파라미터 ===
 TARGET_SAMPLE_RATE = 16000 # sample rate 도 제한을 해서 주파수 해상도를 일정하게 맞추기
-TARGET_NUM_SAMPLES = TARGET_SAMPLE_RATE * 5  # 80,000 samples (딱 5초 기준)
+TARGET_NUM_SAMPLES = TARGET_SAMPLE_RATE * 15  # 240,000 samples (15초 기준, mark5와 통일)
 
 def fix_wav_length(wav_path, save_path):
     try:

@@ -44,7 +44,7 @@ class AudioViLDConfig:
 
         # === 오디오 파라미터 ===
         self.sample_rate = 16000
-        # 세그먼트는 1초 단위로 처리. 파일 전체 길이는 5초(전처리)이나, 세그먼트는 1초 × max_segments 사용.
+        # 세그먼트는 1초 단위로 처리. 파일 전체 길이는 15초(전처리, mark5와 통일)이나, 세그먼트는 1초 × max_segments 사용.
         self.segment_duration = 1.0
         self.segment_samples = int(self.sample_rate * self.segment_duration)
 
