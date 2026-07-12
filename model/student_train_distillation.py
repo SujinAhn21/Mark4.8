@@ -261,8 +261,10 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     if config.use_background_embedding:
         background_embedding = LearnableBackgroundEmbedding(config.embedding_dim).to(device)
 
-    T = 4.0
-    alpha = 0.7
+    # [수정 2026-07-12 / 가설1] 하드코딩(T=4.0, alpha=0.7) -> config로 이동.
+    # 값 자체도 조정됨(alpha 0.7->0.3, T 4.0->2.0). 근거는 vild_config.py의 주석 참조.
+    T = getattr(config, "distill_temperature", 4.0)
+    alpha = getattr(config, "distill_alpha", 0.7)
     crit = DistillationLoss(
         T=T,
         alpha=alpha,
@@ -272,9 +274,11 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     opt_params = list(encoder.parameters()) + list(branch_head.parameters())
     if background_embedding is not None:
         opt_params += list(background_embedding.parameters())
+    # [수정 2026-07-12 / 가설6] weight_decay 추가(기존 0). L2 정규화가 전무했음.
     opt = optim.Adam(
         opt_params,
         lr=config.learning_rate,
+        weight_decay=getattr(config, "weight_decay", 0.0),
     )
     sched = ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=3)
 
@@ -289,7 +293,12 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     )
 
     tr_hist, vl_hist = [], []
+    # [추가 2026-07-12 / 가설1 검증용] 가설1의 판정 기준이 "train hard loss가 0.6 밑으로
+    # 내려가는가"인데 기존 로그는 train total만 찍고 hard/soft/feat 분해값은 val 것만 찍었음.
+    # train/val 양쪽의 분해값을 전부 기록해 CSV로도 남긴다.
+    comp_hist = {k: [] for k in ("train_hard", "train_soft", "train_feat", "val_hard", "val_soft", "val_feat")}
     print(f"[INFO] Student KD training for {mark_version} on {device}")
+    print(f"[INFO] Loss config: alpha={alpha}, T={T}, feature_kd_weight={config.feature_kd_weight if config.use_feature_kd else 0.0}, weight_decay={getattr(config, 'weight_decay', 0.0)}")
 
     for ep in range(config.num_epochs):
         encoder.train()
@@ -329,6 +338,10 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
             total_f += losses["feature"].item()
         tr = total / max(1, len(train_loader))
         tr_hist.append(tr)
+        n_tr = max(1, len(train_loader))
+        comp_hist["train_hard"].append(total_h / n_tr)
+        comp_hist["train_soft"].append(total_s / n_tr)
+        comp_hist["train_feat"].append(total_f / n_tr)
 
         encoder.eval()
         branch_head.eval()
@@ -353,12 +366,16 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
                 total_f += losses["feature"].item()
         vl = total / max(1, len(val_loader))
         vl_hist.append(vl)
+        n_vl = max(1, len(val_loader))
+        comp_hist["val_hard"].append(total_h / n_vl)
+        comp_hist["val_soft"].append(total_s / n_vl)
+        comp_hist["val_feat"].append(total_f / n_vl)
 
         print(
-            f"\n[Epoch {ep+1}] Train {tr:.6f} | Val {vl:.6f} | "
-            f"Hard {total_h / max(1, len(val_loader)):.6f} | "
-            f"Soft {total_s / max(1, len(val_loader)):.6f} | "
-            f"Feat {total_f / max(1, len(val_loader)):.6f}"
+            f"\n[Epoch {ep+1}] Train {tr:.6f} (Hard {comp_hist['train_hard'][-1]:.6f} | "
+            f"Soft {comp_hist['train_soft'][-1]:.6f} | Feat {comp_hist['train_feat'][-1]:.6f}) | "
+            f"Val {vl:.6f} (Hard {comp_hist['val_hard'][-1]:.6f} | "
+            f"Soft {comp_hist['val_soft'][-1]:.6f} | Feat {comp_hist['val_feat'][-1]:.6f})"
         )
 
         stopper(vl, encoder, branch_head, background_embedding)
@@ -392,9 +409,19 @@ def train_student_with_distillation(seed_value=42, mark_version="mark4.1"):
     loss_history_csv = os.path.join(plots, f"loss_history_{mark_version}.csv")
     with open(loss_history_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["epoch", "train_total", "val_total"])
+        # [수정 2026-07-12] 기존 3개 컬럼(epoch, train_total, val_total)은 순서 유지,
+        # 뒤에 hard/soft/feat 분해 컬럼을 추가(가설1 판정 = train_hard 추이 확인용).
+        writer.writerow([
+            "epoch", "train_total", "val_total",
+            "train_hard", "train_soft", "train_feat",
+            "val_hard", "val_soft", "val_feat",
+        ])
         for i in range(len(tr_hist)):
-            writer.writerow([i + 1, tr_hist[i], vl_hist[i]])
+            writer.writerow([
+                i + 1, tr_hist[i], vl_hist[i],
+                comp_hist["train_hard"][i], comp_hist["train_soft"][i], comp_hist["train_feat"][i],
+                comp_hist["val_hard"][i], comp_hist["val_soft"][i], comp_hist["val_feat"][i],
+            ])
     print(f"[INFO] 손실곡선 CSV 저장: {loss_history_csv}")
     print(f"[INFO] Best saved: {enc_path}, {head_path} (val loss {stopper.val_loss_min:.6f})")
     save_checkpoint(

@@ -1,0 +1,233 @@
+[23:08:35] INFO - ==================================================
+[23:08:35] INFO -   소음 분류 전체 학습 파이프라인 (지식 증류 Ver.) 시작  
+[23:08:35] INFO - ==================================================
+[23:08:35] INFO - 모델 버전: mark4.8
+[23:08:35] INFO - 현재 모델은 Teacher의 Soft Label과 실제 Hard Label을 함께 사용하는
+지식 증류(Knowledge Distillation) 방식으로 학습됩니다.
+[23:08:35] INFO - 
+[실행 시작] --> Step0 Preprocess Audio
+[23:08:35] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/fix_audio_length.py --mark_version mark4.8
+[23:09:13] INFO - [INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/train' -> in-place
+[23:09:42] INFO - [DONE] train 완료: 총 400개 중 400개 성공.
+[23:09:42] INFO - [INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/val' -> in-place
+[23:09:48] INFO - [DONE] val 완료: 총 100개 중 100개 성공.
+[23:09:48] INFO - [INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/test' -> in-place
+[23:09:55] INFO - [DONE] test 완료: 총 100개 중 100개 성공.
+[23:09:55] INFO - 
+[23:09:55] INFO - [DONE] 전체 오디오 보정 완료. 총 600개 파일 중 600개 성공.
+[23:09:56] INFO - [완료] --> Step0 Preprocess Audio (소요시간: 80.32초)
+[23:09:56] INFO - 
+[실행 시작] --> Step1 Generate Dataset Index
+[23:09:56] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/generate_dataset_index.py --mark_version mark4.8
+[23:11:13] INFO - Global seed set to 42
+[23:11:13] INFO - 
+[23:11:13] INFO - [INFO] Checking data directory: /mnt/c/workspace/journal/codes/mark4_refactored/data
+[23:11:13] INFO - --- Generating dataset index for: mark4.8 ---
+[23:11:13] INFO -   Data source directory: /mnt/c/workspace/journal/codes/mark4_refactored/data (scanning train/val/test)
+[23:11:13] INFO -   Output CSV file: dataset_index_mark4.8.csv
+[23:11:13] INFO -   Output PKL file: dataset_index_mark4.8.pkl
+[23:11:13] INFO - 
+[23:11:13] INFO - Saved 600 entries to:
+[23:11:13] INFO -   - CSV: /mnt/c/workspace/journal/codes/mark4_refactored/dataset_index_mark4.8.csv
+[23:11:13] INFO -   - PKL: /mnt/c/workspace/journal/codes/mark4_refactored/dataset_index_mark4.8.pkl
+[23:11:13] INFO - 
+[23:11:13] INFO - --- Summary ---
+[23:11:13] INFO - 
+[23:11:13] INFO - Total .wav files scanned: 600
+[23:11:13] INFO - Total labeled entries written: 600
+[23:11:13] INFO - 
+[23:11:13] INFO - [Label Distribution]
+[23:11:13] INFO -   dog_bark: 300 files
+[23:11:13] INFO -   others: 300 files
+[23:11:14] INFO - [완료] 라벨 분포 시각화 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/label_dist_mark4.8.png
+[23:11:15] INFO - [완료] --> Step1 Generate Dataset Index (소요시간: 79.42초)
+[23:11:15] INFO - 
+[실행 시작] --> Step2 Teacher Model Train
+[23:11:15] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/teacher_train.py --mark_version mark4.8
+[23:12:45] INFO - Global seed set to 42
+[23:13:27] INFO - [INFO] Teacher training started for mark4.8 on cpu
+[23:14:58] INFO - [Epoch 1] Train 0.5843 | Val 0.6172
+[23:14:58] INFO - [INFO] Improved. Saved best teacher.
+[23:15:09] INFO - [Epoch 2] Train 0.5341 | Val 0.6384
+[23:15:21] INFO - [Epoch 3] Train 0.5149 | Val 0.6205
+[23:15:32] INFO - [Epoch 4] Train 0.5057 | Val 0.6002
+[23:15:33] INFO - [INFO] Improved. Saved best teacher.
+[23:15:44] INFO - [Epoch 5] Train 0.5048 | Val 0.6302
+[23:15:55] INFO - [Epoch 6] Train 0.4824 | Val 0.6883
+[23:16:07] INFO - [Epoch 7] Train 0.4716 | Val 0.8975
+[23:16:18] INFO - [Epoch 8] Train 0.4761 | Val 0.6578
+[23:16:30] INFO - [Epoch 9] Train 0.4639 | Val 0.5907
+[23:16:30] INFO - [INFO] Improved. Saved best teacher.
+[23:16:42] INFO - [Epoch 10] Train 0.4523 | Val 0.6995
+[23:16:53] INFO - [Epoch 11] Train 0.4552 | Val 0.6211
+[23:17:05] INFO - [Epoch 12] Train 0.4563 | Val 0.6887
+[23:17:19] INFO - [Epoch 13] Train 0.4406 | Val 0.6083
+[23:17:31] INFO - [Epoch 14] Train 0.4370 | Val 0.9225
+[23:17:43] INFO - [Epoch 15] Train 0.4309 | Val 0.5928
+[23:17:55] INFO - [Epoch 16] Train 0.4270 | Val 0.7001
+[23:18:07] INFO - [Epoch 17] Train 0.4261 | Val 0.6329
+[23:18:19] INFO - [Epoch 18] Train 0.4189 | Val 0.6229
+[23:18:31] INFO - [Epoch 19] Train 0.4175 | Val 0.5953
+[23:18:31] INFO - [INFO] Early stopping.
+[23:18:36] INFO - [INFO] Loss curve saved: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_curve_teacher_train_val_mark4.8.png
+[23:18:37] INFO - [완료] --> Step2 Teacher Model Train (소요시간: 441.98초)
+[23:18:37] INFO - 
+[실행 시작] --> Step3 Extract Hard Labels
+[23:18:37] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/extraction/extract_hard_labels.py --mark_version mark4.8
+[23:20:24] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/hard_labels_mark4.8.pkl
+[23:20:24] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/extraction/hard_labels_mark4.8.pkl
+[23:20:24] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/hard_labels_mark4.8.pkl
+[23:20:24] INFO - [완료] hard_labels(train+val) 저장: 500 files
+[23:20:24] INFO - [완료] --> Step3 Extract Hard Labels (소요시간: 107.26초)
+[23:20:24] INFO - 
+[실행 시작] --> Step4 Extract Soft Labels
+[23:20:24] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/extraction/extract_soft_labels.py --mark_version mark4.8
+[23:23:53] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/soft_labels_mark4.8.pkl
+[23:23:53] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/extraction/soft_labels_mark4.8.pkl
+[23:23:54] INFO - [INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/soft_labels_mark4.8.pkl
+[23:23:54] INFO - [완료] soft_labels(train+val) 저장: 500 files
+[23:23:54] INFO - [완료] --> Step4 Extract Soft Labels (소요시간: 209.99초)
+[23:23:54] INFO - 
+[실행 시작] --> Step5 Student Distillation Train
+[23:23:54] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/student_train_distillation.py --mark_version mark4.8
+[23:25:27] INFO - Global seed set to 42
+[23:27:06] INFO - [INFO] Student KD training for mark4.8 on cpu
+[23:27:06] INFO - [INFO] Loss config: alpha=0.3, T=2.0, feature_kd_weight=0.3, weight_decay=0.0001
+[23:27:33] INFO - 
+[23:27:33] INFO - [Epoch 1] Train 0.580245 (Hard 0.601124 | Soft 0.075804 | Feat 0.455722) | Val 0.602873 (Hard 0.651980 | Soft 0.117483 | Feat 0.370808)
+[23:27:33] INFO - [EarlyStopping] Val loss inf -> 0.602873. Saving...
+[23:28:01] INFO - 
+[23:28:01] INFO - [Epoch 2] Train 0.511777 (Hard 0.554743 | Soft 0.069116 | Feat 0.342408) | Val 0.605214 (Hard 0.693479 | Soft 0.121123 | Feat 0.278139)
+[23:28:01] INFO - [EarlyStopping] counter: 1/10
+[23:28:28] INFO - 
+[23:28:28] INFO - [Epoch 3] Train 0.475202 (Hard 0.524945 | Soft 0.072962 | Feat 0.286175) | Val 0.509008 (Hard 0.583004 | Soft 0.098456 | Feat 0.237894)
+[23:28:28] INFO - [EarlyStopping] Val loss 0.602873 -> 0.509008. Saving...
+[23:28:56] INFO - 
+[23:28:56] INFO - [Epoch 4] Train 0.456316 (Hard 0.509110 | Soft 0.067791 | Feat 0.265338) | Val 0.594164 (Hard 0.694997 | Soft 0.133117 | Feat 0.225770)
+[23:28:56] INFO - [EarlyStopping] counter: 1/10
+[23:29:23] INFO - 
+[23:29:23] INFO - [Epoch 5] Train 0.443909 (Hard 0.496370 | Soft 0.072912 | Feat 0.248588) | Val 0.500740 (Hard 0.591766 | Soft 0.076965 | Feat 0.211382)
+[23:29:23] INFO - [EarlyStopping] Val loss 0.509008 -> 0.500740. Saving...
+[23:29:50] INFO - 
+[23:29:50] INFO - [Epoch 6] Train 0.429651 (Hard 0.481787 | Soft 0.070661 | Feat 0.237341) | Val 0.489828 (Hard 0.568357 | Soft 0.101858 | Feat 0.204736)
+[23:29:50] INFO - [EarlyStopping] Val loss 0.500740 -> 0.489828. Saving...
+[23:30:17] INFO - 
+[23:30:17] INFO - [Epoch 7] Train 0.445975 (Hard 0.497731 | Soft 0.087181 | Feat 0.238029) | Val 0.505890 (Hard 0.592295 | Soft 0.101772 | Feat 0.202506)
+[23:30:17] INFO - [EarlyStopping] counter: 1/10
+[23:30:45] INFO - 
+[23:30:45] INFO - [Epoch 8] Train 0.431546 (Hard 0.481763 | Soft 0.085700 | Feat 0.228672) | Val 0.475289 (Hard 0.566560 | Soft 0.067203 | Feat 0.195120)
+[23:30:45] INFO - [EarlyStopping] Val loss 0.489828 -> 0.475289. Saving...
+[23:31:12] INFO - 
+[23:31:12] INFO - [Epoch 9] Train 0.410333 (Hard 0.461751 | Soft 0.073388 | Feat 0.216970) | Val 0.493964 (Hard 0.584715 | Soft 0.089380 | Feat 0.192834)
+[23:31:12] INFO - [EarlyStopping] counter: 1/10
+[23:31:39] INFO - 
+[23:31:39] INFO - [Epoch 10] Train 0.412479 (Hard 0.462200 | Soft 0.076168 | Feat 0.220294) | Val 0.475580 (Hard 0.563081 | Soft 0.081861 | Feat 0.189550)
+[23:31:39] INFO - [EarlyStopping] counter: 2/10
+[23:32:07] INFO - 
+[23:32:07] INFO - [Epoch 11] Train 0.404716 (Hard 0.450944 | Soft 0.081204 | Feat 0.215647) | Val 0.463465 (Hard 0.542683 | Soft 0.089978 | Feat 0.188644)
+[23:32:07] INFO - [EarlyStopping] Val loss 0.475289 -> 0.463465. Saving...
+[23:32:34] INFO - 
+[23:32:34] INFO - [Epoch 12] Train 0.401682 (Hard 0.441518 | Soft 0.098976 | Feat 0.209757) | Val 0.482633 (Hard 0.556045 | Soft 0.125132 | Feat 0.186206)
+[23:32:34] INFO - [EarlyStopping] counter: 1/10
+[23:33:01] INFO - 
+[23:33:01] INFO - [Epoch 13] Train 0.407521 (Hard 0.455561 | Soft 0.080559 | Feat 0.214869) | Val 0.458070 (Hard 0.545942 | Soft 0.069154 | Feat 0.183880)
+[23:33:01] INFO - [EarlyStopping] Val loss 0.463465 -> 0.458070. Saving...
+[23:33:29] INFO - 
+[23:33:29] INFO - [Epoch 14] Train 0.393947 (Hard 0.437950 | Soft 0.083809 | Feat 0.207466) | Val 0.498946 (Hard 0.590174 | Soft 0.102112 | Feat 0.183970)
+[23:33:29] INFO - [EarlyStopping] counter: 1/10
+[23:33:56] INFO - 
+[23:33:56] INFO - [Epoch 15] Train 0.386734 (Hard 0.426263 | Soft 0.090469 | Feat 0.204031) | Val 0.521805 (Hard 0.610601 | Soft 0.130347 | Feat 0.184269)
+[23:33:56] INFO - [EarlyStopping] counter: 2/10
+[23:34:23] INFO - 
+[23:34:23] INFO - [Epoch 16] Train 0.392060 (Hard 0.432255 | Soft 0.095542 | Feat 0.202729) | Val 0.495811 (Hard 0.595273 | Soft 0.082055 | Feat 0.181676)
+[23:34:23] INFO - [EarlyStopping] counter: 3/10
+[23:34:51] INFO - 
+[23:34:51] INFO - [Epoch 17] Train 0.392106 (Hard 0.436012 | Soft 0.086701 | Feat 0.202957) | Val 0.455763 (Hard 0.540270 | Soft 0.077661 | Feat 0.180920)
+[23:34:51] INFO - [EarlyStopping] Val loss 0.458070 -> 0.455763. Saving...
+[23:35:18] INFO - 
+[23:35:18] INFO - [Epoch 18] Train 0.392654 (Hard 0.435624 | Soft 0.083918 | Feat 0.208474) | Val 0.520624 (Hard 0.623161 | Soft 0.097737 | Feat 0.183634)
+[23:35:18] INFO - [EarlyStopping] counter: 1/10
+[23:35:46] INFO - 
+[23:35:46] INFO - [Epoch 19] Train 0.380790 (Hard 0.417875 | Soft 0.094395 | Feat 0.199863) | Val 0.481624 (Hard 0.578794 | Soft 0.075110 | Feat 0.179782)
+[23:35:46] INFO - [EarlyStopping] counter: 2/10
+[23:36:13] INFO - 
+[23:36:13] INFO - [Epoch 20] Train 0.385265 (Hard 0.422814 | Soft 0.097515 | Feat 0.200135) | Val 0.492329 (Hard 0.577603 | Soft 0.114106 | Feat 0.179250)
+[23:36:13] INFO - [EarlyStopping] counter: 3/10
+[23:36:41] INFO - 
+[23:36:41] INFO - [Epoch 21] Train 0.372990 (Hard 0.408544 | Soft 0.092724 | Feat 0.197306) | Val 0.494404 (Hard 0.574810 | Soft 0.128386 | Feat 0.178405)
+[23:36:41] INFO - [EarlyStopping] counter: 4/10
+[23:36:41] INFO - [LR] 0.0001 -> 5e-05 (val=0.494404)
+[23:37:09] INFO - 
+[23:37:09] INFO - [Epoch 22] Train 0.360327 (Hard 0.384960 | Soft 0.105878 | Feat 0.196972) | Val 0.450014 (Hard 0.530190 | Soft 0.085760 | Feat 0.177179)
+[23:37:09] INFO - [EarlyStopping] Val loss 0.455763 -> 0.450014. Saving...
+[23:37:36] INFO - 
+[23:37:36] INFO - [Epoch 23] Train 0.366064 (Hard 0.395351 | Soft 0.095960 | Feat 0.201767) | Val 0.470698 (Hard 0.554553 | Soft 0.098110 | Feat 0.176926)
+[23:37:36] INFO - [EarlyStopping] counter: 1/10
+[23:38:03] INFO - 
+[23:38:03] INFO - [Epoch 24] Train 0.358707 (Hard 0.388996 | Soft 0.093085 | Feat 0.194947) | Val 0.459469 (Hard 0.545208 | Soft 0.083234 | Feat 0.176177)
+[23:38:03] INFO - [EarlyStopping] counter: 2/10
+[23:38:31] INFO - 
+[23:38:31] INFO - [Epoch 25] Train 0.366232 (Hard 0.396791 | Soft 0.097886 | Feat 0.197041) | Val 0.469300 (Hard 0.547777 | Soft 0.109709 | Feat 0.176477)
+[23:38:31] INFO - [EarlyStopping] counter: 3/10
+[23:38:59] INFO - 
+[23:38:59] INFO - [Epoch 26] Train 0.363455 (Hard 0.389536 | Soft 0.108916 | Feat 0.193683) | Val 0.477292 (Hard 0.563434 | Soft 0.099763 | Feat 0.176532)
+[23:38:59] INFO - [EarlyStopping] counter: 4/10
+[23:38:59] INFO - [LR] 5e-05 -> 2.5e-05 (val=0.477292)
+[23:39:26] INFO - 
+[23:39:26] INFO - [Epoch 27] Train 0.357743 (Hard 0.385491 | Soft 0.093048 | Feat 0.199951) | Val 0.462746 (Hard 0.545165 | Soft 0.094598 | Feat 0.175836)
+[23:39:26] INFO - [EarlyStopping] counter: 5/10
+[23:39:53] INFO - 
+[23:39:53] INFO - [Epoch 28] Train 0.355377 (Hard 0.384172 | Soft 0.096663 | Feat 0.191525) | Val 0.452801 (Hard 0.534892 | Soft 0.085858 | Feat 0.175398)
+[23:39:53] INFO - [EarlyStopping] counter: 6/10
+[23:40:20] INFO - 
+[23:40:20] INFO - [Epoch 29] Train 0.353668 (Hard 0.379431 | Soft 0.096950 | Feat 0.196604) | Val 0.468994 (Hard 0.550802 | Soft 0.102374 | Feat 0.175735)
+[23:40:21] INFO - [EarlyStopping] counter: 7/10
+[23:40:48] INFO - 
+[23:40:48] INFO - [Epoch 30] Train 0.353912 (Hard 0.378958 | Soft 0.098063 | Feat 0.197408) | Val 0.476789 (Hard 0.562225 | Soft 0.101467 | Feat 0.175974)
+[23:40:48] INFO - [EarlyStopping] counter: 8/10
+[23:40:48] INFO - [LR] 2.5e-05 -> 1.25e-05 (val=0.476789)
+[23:41:15] INFO - 
+[23:41:15] INFO - [Epoch 31] Train 0.349621 (Hard 0.374866 | Soft 0.097296 | Feat 0.193418) | Val 0.456628 (Hard 0.535849 | Soft 0.096315 | Feat 0.175462)
+[23:41:15] INFO - [EarlyStopping] counter: 9/10
+[23:41:43] INFO - 
+[23:41:43] INFO - [Epoch 32] Train 0.351257 (Hard 0.374100 | Soft 0.100825 | Feat 0.197133) | Val 0.462430 (Hard 0.542454 | Soft 0.099992 | Feat 0.175716)
+[23:41:43] INFO - [EarlyStopping] counter: 10/10
+[23:41:43] INFO - [INFO] Early stopping.
+[23:41:44] INFO - [INFO] Saved loss curve: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_curve_distilled_student_mark4.8.png
+[23:41:44] INFO - [INFO] 손실곡선 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_history_mark4.8.csv
+[23:41:44] INFO - [INFO] Best saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/distilled_student_encoder_mark4.8.pth, /mnt/c/workspace/journal/codes/mark4_refactored/model/distilled_student_head_mark4.8.pth (val loss 0.450014)
+[23:41:45] INFO - [완료] --> Step5 Student Distillation Train (소요시간: 1070.44초)
+[23:41:45] INFO - 
+[실행 시작] --> Step6 Evaluate Model
+[23:41:45] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/eval.py --mark_version mark4.8
+[23:43:28] INFO - [INFO] test 전량 후보: 100개. 유효성 검사 후 평가 시작.
+[23:43:31] INFO - [INFO] 유효 test 샘플: 100개
+[23:43:31] INFO - Global seed set to 42
+[23:50:37] INFO - [INFO] Confusion matrix 저장 완료.
+[23:50:37] INFO - [others FPR] 실제 others인데 타겟 클래스로 오분류된 비율: 0.0000
+[23:50:37] INFO - 
+[23:50:37] INFO - ==============================
+[23:50:37] INFO -       성능 평가 결과 (mark4.8)
+[23:50:37] INFO - ==============================
+[23:50:37] INFO -   - Accuracy: 0.8100
+[23:50:37] INFO -   - ROC AUC: 0.9192
+[23:50:37] INFO - 
+[23:50:37] INFO - 클래스별 성능:
+[23:50:37] INFO -   - dog_bark | P:1.0000 R:0.6200 F1:0.7654
+[23:50:37] INFO -   - others | P:0.7246 R:1.0000 F1:0.8403
+[23:50:37] INFO - ==============================
+[23:50:37] INFO - 
+[23:50:38] INFO - [INFO] 성능 요약 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/performance_summary_mark4.8.csv
+[23:50:38] INFO - [INFO] 상세 예측 결과 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/prediction_details_mark4.8.csv
+[23:50:39] INFO - [완료] --> Step6 Evaluate Model (소요시간: 533.98초)
+[23:50:39] INFO - 
+[실행 시작] --> Step7 Plot Results
+[23:50:39] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/plot_audio.py --mark_version mark4.8
+[23:52:23] INFO - Global seed set to 42
+[23:52:24] INFO - [완료] Waveform plot 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_waveform_mark4.8.png
+[23:52:24] INFO - [완료] Mel spectrogram plot 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_mel_mark4.8.png
+[23:52:24] INFO - [시도 완료] 저장된 시각화 결과 -> Wave: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_waveform_mark4.8.png, Mel: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_mel_mark4.8.png
+[23:52:25] INFO - [완료] --> Step7 Plot Results (소요시간: 106.19초)
+[23:52:25] INFO - ==================================================
+[23:52:25] INFO - [종료] 전체 파이프라인 완료. 로그 파일: /mnt/c/workspace/journal/codes/mark4_refactored/logFiles/run_pipeline_distillation_mark4.8_20260712_230835.txt
+[23:52:25] INFO - ==================================================

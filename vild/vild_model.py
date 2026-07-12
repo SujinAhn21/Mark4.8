@@ -31,17 +31,30 @@ class SimpleAudioEncoder(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
 
+        # [추가 2026-07-12 / 가설2] conv 2블록(32->64ch, 약 4.5만 파라미터)에서는 train hard
+        # loss가 랜덤 근처(~0.60)에 고착되어 훈련 데이터조차 못 맞추는 과소적합이 관찰됨.
+        # 용량 한계인지 진단하기 위해 3블록(32->64->128ch, 약 14.4만 파라미터)으로 확장.
+        # 여전히 엣지 배포 가능한 초경량 수준. 입력 64x101 -> 3회 MaxPool 후 8x12.
+        # 주의: 이 변경으로 기존 .pth 체크포인트와는 구조가 안 맞으므로 전체 재학습 필요.
+        self.conv_block3 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
-            nn.LayerNorm(64),
+            nn.LayerNorm(128),
             nn.Dropout(0.3),
-            nn.Linear(64, config.embedding_dim)
+            nn.Linear(128, config.embedding_dim)
         )
 
         self.model = nn.Sequential(
             self.conv_block1,
             self.conv_block2,
+            self.conv_block3,
             self.head
         )
 

@@ -17,7 +17,11 @@ class ViLDLosses:
     def __init__(self, config: AudioViLDConfig):
         self.text_loss_weight = config.text_loss_weight
         self.image_loss_weight = config.image_loss_weight
-        self.ce_loss = nn.CrossEntropyLoss()
+        # [수정 2026-07-12 / 가설3] teacher가 약하고 일찍 과적합(val best epoch 5)하던 문제
+        # 완화용 label smoothing. config에 없으면 0.0으로 기존과 동일 동작.
+        self.ce_loss = nn.CrossEntropyLoss(
+            label_smoothing=getattr(config, "teacher_label_smoothing", 0.0)
+        )
 
     def compute_text_loss(self, logits, targets):
         """

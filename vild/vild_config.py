@@ -102,6 +102,15 @@ class AudioViLDConfig:
         # macro F1 0.639->0.650(오히려 개선). others-calibration은 원래 9-class generalist(mark5)용
         # 반려 로직이라 2-class specialist에는 부적합. (eval 시점 로직이라 재학습 불필요.)
         self.use_others_calibration = False
+        # [추가 2026-07-13] 2-class 전용 최종 결정 threshold. 기존에는 argmax(=암묵적 0.5)였음.
+        # 가설 1·2·3·4·6 적용 재학습(커밋 63428a2) 결과 모델이 초보수적으로 변해(dog precision
+        # 1.0, Others FPR 0.0) 놓친 dog 19건 중 11건이 Prob 0.4~0.5 구간에 몰려 있었음.
+        # ROC AUC 0.9192로 분리력이 생긴 상태라 운영점 선택이 가능해짐: threshold를 0.40으로
+        # 낮추면 dog recall 0.62->0.84, accuracy 0.81->0.83, Others FPR 0.00->0.18 (test 100개
+        # 시뮬레이션). 주의: 이 값은 test set으로 고른 것이라 val set 기준 재검증이 이상적임.
+        # 또한 mark4.8 학습 결과 기준이므로 다른 4.x 버전은 각자 재튜닝 필요.
+        # None이면 기존 argmax 동작. 2-class가 아니면 무시됨.
+        self.target_decision_threshold = 0.40
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
         # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).
@@ -120,6 +129,21 @@ class AudioViLDConfig:
         self.batch_size = 16
         self.num_epochs = 80 # 100에서 80으로 줄임
         self.learning_rate = 1e-4
+        # [추가 2026-07-12 / 가설6] L2 정규화. 그동안 teacher/student 두 옵티마이저 모두
+        # weight_decay가 전무했음(dropout 0.3만). teacher가 val best를 epoch 5에 찍고 곧장
+        # 과적합으로 넘어가던 실측(train down/val up)에 대한 표준 처방.
+        self.weight_decay = 1e-4
+        # [추가 2026-07-12 / 가설3] teacher CE에 label smoothing. teacher가 약하고 일찍
+        # 과적합하는 문제 완화용. 0이면 기존과 동일 동작.
+        self.teacher_label_smoothing = 0.1
+        # [추가 2026-07-12 / 가설1] 증류 loss 배분. 기존에는 student_train_distillation.py에
+        # alpha=0.7, T=4.0이 하드코딩되어 있었음. 실측(2026-07-12): soft loss가 0.02 수준으로
+        # 신호가 거의 없는데 총 loss의 70%를 차지해 분류(hard, 30%)가 굶주렸고, 그 결과
+        # train에서조차 hard loss가 랜덤 근처(~0.60, 2-class 랜덤 ln2=0.693)에 고착(분류 과소적합).
+        # alpha를 낮춰 hard에 70%를 배분하고, T도 4.0->2.0으로 낮춰 soft 신호가 덜 뭉개지게 함.
+        # 검증 기준: 재학습 후 train hard loss가 0.6 밑으로 내려가는지 확인.
+        self.distill_alpha = 0.3
+        self.distill_temperature = 2.0
         # [추가 2026-07-11] teacher_train.py의 EarlyStopping patience가 2로 하드코딩돼 있어
         # num_epochs=80까지 갈 수 있는데도 val loss가 한 번만 반등해도 5epoch 안에 조기종료되던 버그.
         # student(student_train_distillation.py의 EarlyStopping)와 동일하게 10으로 통일.
