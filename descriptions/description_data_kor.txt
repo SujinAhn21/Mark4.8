@@ -1,0 +1,45 @@
+[데이터 설명]
+
+◾Mark4.1 ~ 4.8
+- Target: 700, Others: 1500 -> 한 클래스 당 2200
+- Train: Target 500, Others 500
+- Validation: Target 100, Others 100
+- Test: Target 100, Others 900 (현실 세계 반영)
++) Mark4.1 ~ Mark4.8 사이에서 Others 데이터 1500개는 공유된다. 세그먼트는 5로 고정한다.
+
+
+
+◾Mark 4.1: heavy_impact vs others
+- Target(Positive): 중량충격음 - 망치질(hammer), 쿵쿵소리(heavyThumping), 쿵쿵 뛰는 발소리(heavyThumpingFoot), 무거운 물체 떨어지는 소리(heavyDrop)
+  +) 데이터 라벨링 예시: heavy_impact_hammer_1 (클래스이름_데이터설명_번호)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.2: dragging vs others
+- Target(Positive): 경량충격음 - 슬리퍼 끄는 소리(slippers), 가벼운 발소리(lightFoot), 의자 끄는 소리(chair)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.3: construction vs others
+- Target(Positive): 드릴소리(drill) 등 각종 공사장 소리 (망치 소리는 제외)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.4: machine_noise vs others
+- Target(Positive): 에어컨 실외기 진동음(AC), 보일러 진동음(boiler), 세탁기 진동음(washing), 건조기 진동음(dryer), 핸드폰 진동음(phoneVib)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.5: media_talking vs others
+- Target(Positive): 말소리(human), TV소리(TV), 음악소리(music), 전화통화 소리(phoneCall)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.6: water_toilet vs others 
+- Target(Positive): 화장실 물내려가는 소리, 막히는 소리 (toilet)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.7: water_shower vs others
+- Target(Positive): 샤워할때 높은 곳에서 물 떨어지는 소리(shower)
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+◾Mark 4.8: dog_bark vs others
+- Target(Positive): 개짖는 소리 – (bark_high), (bark_mid), (bark_low) 
+- Others(Negative): 데이터는 target 클래스와 음향적으로 유사하지만 명확히 다른 소리로, 층간소음과 섞여 들릴 수 있는 외부 소음, 자연소리 등을 포함.
+
+

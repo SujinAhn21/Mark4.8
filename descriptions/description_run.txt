@@ -1,0 +1,18 @@
+로컬 실행
+
+1. Anaconda Prompt에서 실행하는 법
+1) 가상환경 활성화
+conda activate [가상환경이름] 난 vild-audio다
+그래서 conda activate vild-audio
+2) 프로젝트 폴더로 이동
+cd "C:\Users\user\Desktop\AI_model\mark2.5.0"
+3) 파이썬 스크립트 실행
+python run_all.py
+
+2. VSC 프롬프트(터미널)에서 실행하는 법
+1) 오른쪽 상단에 있는 Python 인터프리터 선택 버튼 클릭
+-> Python: Select Interpreter
+-> 방금 만든 가상환경 선택
+2) VSC 내 터미널 열기: ctrl + '
+3) 터미널에 입력: python run_all.py
+

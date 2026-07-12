@@ -1,0 +1,1242 @@
+[13:54:20] INFO - ==================================================
+[13:54:20] INFO -   소음 분류 전체 학습 파이프라인 (지식 증류 Ver.) 시작  
+[13:54:20] INFO - ==================================================
+[13:54:20] INFO - 모델 버전: mark4.8
+[13:54:20] INFO - 현재 모델은 Teacher의 Soft Label과 실제 Hard Label을 함께 사용하는
+지식 증류(Knowledge Distillation) 방식으로 학습됩니다.
+[13:54:20] INFO - 
+[실행 시작] --> Step0 Preprocess Audio
+[13:54:20] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/fix_audio_length.py --mark_version mark4.8
+[13:55:36] INFO - [STDOUT]
+[INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/train' -> in-place
+[DONE] train 완료: 총 200개 중 200개 성공.
+[INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/val' -> in-place
+[DONE] val 완료: 총 100개 중 100개 성공.
+[INFO] 오디오 길이 보정 시작: '/mnt/c/workspace/journal/codes/mark4_refactored/data/test' -> in-place
+[DONE] test 완료: 총 100개 중 100개 성공.
+
+[DONE] 전체 오디오 보정 완료. 총 400개 파일 중 400개 성공.
+
+[13:55:36] INFO - [STDERR]
+
+Processing mark4.8 [train]:   0%|          | 0/200 [00:00<?, ?file/s]
+Processing mark4.8 [train]:   0%|          | 1/200 [00:00<00:22,  8.98file/s]
+Processing mark4.8 [train]:   1%|          | 2/200 [00:00<00:25,  7.88file/s]
+Processing mark4.8 [train]:   2%|▏         | 4/200 [00:00<00:17, 11.30file/s]
+Processing mark4.8 [train]:   3%|▎         | 6/200 [00:00<00:14, 13.61file/s]
+Processing mark4.8 [train]:   4%|▍         | 8/200 [00:00<00:13, 14.09file/s]
+Processing mark4.8 [train]:   5%|▌         | 10/200 [00:00<00:12, 15.49file/s]
+Processing mark4.8 [train]:   6%|▌         | 12/200 [00:00<00:12, 15.59file/s]
+Processing mark4.8 [train]:   7%|▋         | 14/200 [00:00<00:11, 15.87file/s]
+Processing mark4.8 [train]:   8%|▊         | 16/200 [00:01<00:11, 16.63file/s]
+Processing mark4.8 [train]:   9%|▉         | 18/200 [00:01<00:11, 16.39file/s]
+Processing mark4.8 [train]:  10%|█         | 20/200 [00:01<00:11, 15.32file/s]
+Processing mark4.8 [train]:  11%|█         | 22/200 [00:01<00:11, 15.20file/s]
+Processing mark4.8 [train]:  12%|█▏        | 24/200 [00:01<00:11, 14.76file/s]
+Processing mark4.8 [train]:  13%|█▎        | 26/200 [00:01<00:11, 14.86file/s]
+Processing mark4.8 [train]:  14%|█▍        | 29/200 [00:01<00:09, 17.23file/s]
+Processing mark4.8 [train]:  16%|█▌        | 31/200 [00:02<00:09, 17.36file/s]
+Processing mark4.8 [train]:  16%|█▋        | 33/200 [00:02<00:10, 15.59file/s]
+Processing mark4.8 [train]:  18%|█▊        | 35/200 [00:02<00:11, 14.45file/s]
+Processing mark4.8 [train]:  18%|█▊        | 37/200 [00:02<00:10, 15.12file/s]
+Processing mark4.8 [train]:  20%|█▉        | 39/200 [00:02<00:10, 15.19file/s]
+Processing mark4.8 [train]:  20%|██        | 41/200 [00:02<00:10, 15.79file/s]
+Processing mark4.8 [train]:  22%|██▏       | 43/200 [00:02<00:09, 16.76file/s]
+Processing mark4.8 [train]:  22%|██▎       | 45/200 [00:02<00:09, 16.26file/s]
+Processing mark4.8 [train]:  24%|██▎       | 47/200 [00:03<00:09, 16.09file/s]
+Processing mark4.8 [train]:  25%|██▌       | 50/200 [00:03<00:07, 19.14file/s]
+Processing mark4.8 [train]:  26%|██▋       | 53/200 [00:03<00:07, 19.89file/s]
+Processing mark4.8 [train]:  28%|██▊       | 56/200 [00:03<00:07, 18.47file/s]
+Processing mark4.8 [train]:  30%|██▉       | 59/200 [00:03<00:07, 19.29file/s]
+Processing mark4.8 [train]:  31%|███       | 62/200 [00:03<00:06, 20.58file/s]
+Processing mark4.8 [train]:  32%|███▎      | 65/200 [00:03<00:06, 21.46file/s]
+Processing mark4.8 [train]:  34%|███▍      | 68/200 [00:04<00:06, 21.68file/s]
+Processing mark4.8 [train]:  36%|███▌      | 71/200 [00:04<00:06, 19.90file/s]
+Processing mark4.8 [train]:  37%|███▋      | 74/200 [00:04<00:06, 18.69file/s]
+Processing mark4.8 [train]:  38%|███▊      | 76/200 [00:04<00:06, 18.23file/s]
+Processing mark4.8 [train]:  39%|███▉      | 78/200 [00:04<00:06, 18.40file/s]
+Processing mark4.8 [train]:  40%|████      | 80/200 [00:04<00:06, 17.80file/s]
+Processing mark4.8 [train]:  41%|████      | 82/200 [00:04<00:06, 17.23file/s]
+Processing mark4.8 [train]:  42%|████▎     | 85/200 [00:05<00:06, 18.77file/s]
+Processing mark4.8 [train]:  44%|████▍     | 88/200 [00:05<00:06, 18.54file/s]
+Processing mark4.8 [train]:  45%|████▌     | 90/200 [00:05<00:06, 18.27file/s]
+Processing mark4.8 [train]:  46%|████▋     | 93/200 [00:05<00:05, 19.45file/s]
+Processing mark4.8 [train]:  48%|████▊     | 95/200 [00:05<00:05, 19.17file/s]
+Processing mark4.8 [train]:  48%|████▊     | 97/200 [00:05<00:05, 17.47file/s]
+Processing mark4.8 [train]:  50%|████▉     | 99/200 [00:05<00:06, 16.26file/s]
+Processing mark4.8 [train]:  50%|█████     | 101/200 [00:05<00:06, 15.54file/s]
+Processing mark4.8 [train]:  52%|█████▏    | 103/200 [00:06<00:06, 15.57file/s]
+Processing mark4.8 [train]:  52%|█████▎    | 105/200 [00:06<00:05, 15.91file/s]
+Processing mark4.8 [train]:  54%|█████▎    | 107/200 [00:06<00:05, 15.84file/s]
+Processing mark4.8 [train]:  55%|█████▌    | 110/200 [00:06<00:05, 16.45file/s]
+Processing mark4.8 [train]:  56%|█████▌    | 112/200 [00:06<00:05, 17.10file/s]
+Processing mark4.8 [train]:  57%|█████▋    | 114/200 [00:06<00:05, 14.90file/s]
+Processing mark4.8 [train]:  58%|█████▊    | 116/200 [00:07<00:06, 12.61file/s]
+Processing mark4.8 [train]:  59%|█████▉    | 118/200 [00:07<00:06, 13.22file/s]
+Processing mark4.8 [train]:  60%|██████    | 120/200 [00:07<00:06, 13.23file/s]
+Processing mark4.8 [train]:  61%|██████    | 122/200 [00:07<00:06, 11.87file/s]
+Processing mark4.8 [train]:  62%|██████▏   | 124/200 [00:07<00:06, 12.33file/s]
+Processing mark4.8 [train]:  63%|██████▎   | 126/200 [00:07<00:05, 13.71file/s]
+Processing mark4.8 [train]:  64%|██████▍   | 128/200 [00:07<00:04, 14.65file/s]
+Processing mark4.8 [train]:  65%|██████▌   | 130/200 [00:07<00:04, 15.07file/s]
+Processing mark4.8 [train]:  66%|██████▌   | 132/200 [00:08<00:04, 16.16file/s]
+Processing mark4.8 [train]:  67%|██████▋   | 134/200 [00:08<00:04, 15.64file/s]
+Processing mark4.8 [train]:  68%|██████▊   | 136/200 [00:08<00:03, 16.27file/s]
+Processing mark4.8 [train]:  69%|██████▉   | 138/200 [00:08<00:03, 16.86file/s]
+Processing mark4.8 [train]:  70%|███████   | 140/200 [00:08<00:03, 17.48file/s]
+Processing mark4.8 [train]:  71%|███████   | 142/200 [00:08<00:03, 17.56file/s]
+Processing mark4.8 [train]:  72%|███████▏  | 144/200 [00:08<00:03, 15.60file/s]
+Processing mark4.8 [train]:  73%|███████▎  | 146/200 [00:09<00:03, 13.84file/s]
+Processing mark4.8 [train]:  74%|███████▍  | 148/200 [00:09<00:03, 14.73file/s]
+Processing mark4.8 [train]:  75%|███████▌  | 150/200 [00:09<00:03, 14.37file/s]
+Processing mark4.8 [train]:  76%|███████▌  | 152/200 [00:09<00:03, 14.03file/s]
+Processing mark4.8 [train]:  77%|███████▋  | 154/200 [00:09<00:03, 14.26file/s]
+Processing mark4.8 [train]:  78%|███████▊  | 156/200 [00:09<00:03, 14.33file/s]
+Processing mark4.8 [train]:  79%|███████▉  | 158/200 [00:09<00:03, 13.37file/s]
+Processing mark4.8 [train]:  80%|████████  | 160/200 [00:09<00:02, 14.42file/s]
+Processing mark4.8 [train]:  81%|████████  | 162/200 [00:10<00:02, 14.76file/s]
+Processing mark4.8 [train]:  82%|████████▏ | 164/200 [00:10<00:02, 15.98file/s]
+Processing mark4.8 [train]:  83%|████████▎ | 166/200 [00:10<00:02, 15.34file/s]
+Processing mark4.8 [train]:  84%|████████▍ | 168/200 [00:10<00:02, 15.57file/s]
+Processing mark4.8 [train]:  85%|████████▌ | 170/200 [00:10<00:01, 16.07file/s]
+Processing mark4.8 [train]:  86%|████████▌ | 172/200 [00:10<00:01, 15.72file/s]
+Processing mark4.8 [train]:  87%|████████▋ | 174/200 [00:10<00:01, 14.99file/s]
+Processing mark4.8 [train]:  88%|████████▊ | 176/200 [00:11<00:01, 15.37file/s]
+Processing mark4.8 [train]:  89%|████████▉ | 178/200 [00:11<00:01, 14.17file/s]
+Processing mark4.8 [train]:  90%|█████████ | 180/200 [00:11<00:01, 14.55file/s]
+Processing mark4.8 [train]:  91%|█████████ | 182/200 [00:11<00:01, 14.19file/s]
+Processing mark4.8 [train]:  92%|█████████▏| 184/200 [00:11<00:01, 12.24file/s]
+Processing mark4.8 [train]:  93%|█████████▎| 186/200 [00:11<00:01, 10.64file/s]
+Processing mark4.8 [train]:  94%|█████████▍| 188/200 [00:12<00:01, 10.43file/s]
+Processing mark4.8 [train]:  96%|█████████▌| 191/200 [00:12<00:00, 13.17file/s]
+Processing mark4.8 [train]:  96%|█████████▋| 193/200 [00:12<00:00, 13.44file/s]
+Processing mark4.8 [train]:  98%|█████████▊| 195/200 [00:12<00:00, 12.92file/s]
+Processing mark4.8 [train]:  98%|█████████▊| 197/200 [00:12<00:00, 13.93file/s]
+Processing mark4.8 [train]: 100%|█████████▉| 199/200 [00:12<00:00, 14.68file/s]
+Processing mark4.8 [train]: 100%|██████████| 200/200 [00:12<00:00, 15.52file/s]
+
+Processing mark4.8 [val]:   0%|          | 0/100 [00:00<?, ?file/s]
+Processing mark4.8 [val]:   1%|          | 1/100 [00:00<00:10,  9.66file/s]
+Processing mark4.8 [val]:   3%|▎         | 3/100 [00:00<00:07, 12.18file/s]
+Processing mark4.8 [val]:   5%|▌         | 5/100 [00:00<00:07, 12.04file/s]
+Processing mark4.8 [val]:   7%|▋         | 7/100 [00:00<00:07, 12.70file/s]
+Processing mark4.8 [val]:   9%|▉         | 9/100 [00:00<00:07, 12.62file/s]
+Processing mark4.8 [val]:  11%|█         | 11/100 [00:00<00:07, 11.25file/s]
+Processing mark4.8 [val]:  13%|█▎        | 13/100 [00:01<00:07, 12.25file/s]
+Processing mark4.8 [val]:  15%|█▌        | 15/100 [00:01<00:07, 12.06file/s]
+Processing mark4.8 [val]:  17%|█▋        | 17/100 [00:01<00:07, 11.50file/s]
+Processing mark4.8 [val]:  19%|█▉        | 19/100 [00:01<00:06, 12.73file/s]
+Processing mark4.8 [val]:  22%|██▏       | 22/100 [00:01<00:05, 15.40file/s]
+Processing mark4.8 [val]:  24%|██▍       | 24/100 [00:01<00:04, 15.55file/s]
+Processing mark4.8 [val]:  26%|██▌       | 26/100 [00:01<00:05, 14.19file/s]
+Processing mark4.8 [val]:  28%|██▊       | 28/100 [00:02<00:05, 14.39file/s]
+Processing mark4.8 [val]:  30%|███       | 30/100 [00:02<00:04, 14.59file/s]
+Processing mark4.8 [val]:  32%|███▏      | 32/100 [00:02<00:04, 15.18file/s]
+Processing mark4.8 [val]:  34%|███▍      | 34/100 [00:02<00:04, 15.97file/s]
+Processing mark4.8 [val]:  36%|███▌      | 36/100 [00:02<00:04, 15.46file/s]
+Processing mark4.8 [val]:  38%|███▊      | 38/100 [00:02<00:04, 14.18file/s]
+Processing mark4.8 [val]:  40%|████      | 40/100 [00:02<00:03, 15.31file/s]
+Processing mark4.8 [val]:  42%|████▏     | 42/100 [00:03<00:03, 15.06file/s]
+Processing mark4.8 [val]:  45%|████▌     | 45/100 [00:03<00:03, 16.49file/s]
+Processing mark4.8 [val]:  48%|████▊     | 48/100 [00:03<00:03, 16.86file/s]
+Processing mark4.8 [val]:  50%|█████     | 50/100 [00:03<00:02, 16.78file/s]
+Processing mark4.8 [val]:  52%|█████▏    | 52/100 [00:03<00:02, 16.57file/s]
+Processing mark4.8 [val]:  54%|█████▍    | 54/100 [00:03<00:02, 17.23file/s]
+Processing mark4.8 [val]:  56%|█████▌    | 56/100 [00:03<00:02, 14.93file/s]
+Processing mark4.8 [val]:  58%|█████▊    | 58/100 [00:04<00:02, 14.41file/s]
+Processing mark4.8 [val]:  60%|██████    | 60/100 [00:04<00:02, 14.46file/s]
+Processing mark4.8 [val]:  62%|██████▏   | 62/100 [00:04<00:02, 13.00file/s]
+Processing mark4.8 [val]:  64%|██████▍   | 64/100 [00:04<00:02, 12.49file/s]
+Processing mark4.8 [val]:  66%|██████▌   | 66/100 [00:04<00:03, 11.22file/s]
+Processing mark4.8 [val]:  68%|██████▊   | 68/100 [00:04<00:02, 11.67file/s]
+Processing mark4.8 [val]:  70%|███████   | 70/100 [00:05<00:02, 12.57file/s]
+Processing mark4.8 [val]:  72%|███████▏  | 72/100 [00:05<00:02, 12.82file/s]
+Processing mark4.8 [val]:  74%|███████▍  | 74/100 [00:05<00:02, 12.63file/s]
+Processing mark4.8 [val]:  76%|███████▌  | 76/100 [00:05<00:01, 13.24file/s]
+Processing mark4.8 [val]:  78%|███████▊  | 78/100 [00:05<00:01, 13.06file/s]
+Processing mark4.8 [val]:  80%|████████  | 80/100 [00:05<00:01, 13.52file/s]
+Processing mark4.8 [val]:  82%|████████▏ | 82/100 [00:06<00:01, 11.57file/s]
+Processing mark4.8 [val]:  84%|████████▍ | 84/100 [00:06<00:01, 11.42file/s]
+Processing mark4.8 [val]:  86%|████████▌ | 86/100 [00:06<00:01, 11.60file/s]
+Processing mark4.8 [val]:  88%|████████▊ | 88/100 [00:06<00:01, 11.89file/s]
+Processing mark4.8 [val]:  90%|█████████ | 90/100 [00:06<00:00, 11.56file/s]
+Processing mark4.8 [val]:  92%|█████████▏| 92/100 [00:06<00:00, 11.20file/s]
+Processing mark4.8 [val]:  94%|█████████▍| 94/100 [00:07<00:00, 12.03file/s]
+Processing mark4.8 [val]:  96%|█████████▌| 96/100 [00:07<00:00, 13.31file/s]
+Processing mark4.8 [val]:  98%|█████████▊| 98/100 [00:07<00:00, 14.31file/s]
+Processing mark4.8 [val]: 100%|██████████| 100/100 [00:07<00:00, 14.68file/s]
+Processing mark4.8 [val]: 100%|██████████| 100/100 [00:07<00:00, 13.52file/s]
+
+Processing mark4.8 [test]:   0%|          | 0/100 [00:00<?, ?file/s]
+Processing mark4.8 [test]:   2%|▏         | 2/100 [00:00<00:06, 15.25file/s]
+Processing mark4.8 [test]:   4%|▍         | 4/100 [00:00<00:05, 16.95file/s]
+Processing mark4.8 [test]:   7%|▋         | 7/100 [00:00<00:04, 19.26file/s]
+Processing mark4.8 [test]:  10%|█         | 10/100 [00:00<00:04, 18.46file/s]
+Processing mark4.8 [test]:  12%|█▏        | 12/100 [00:00<00:05, 15.85file/s]
+Processing mark4.8 [test]:  14%|█▍        | 14/100 [00:00<00:05, 15.92file/s]
+Processing mark4.8 [test]:  16%|█▌        | 16/100 [00:01<00:06, 13.00file/s]
+Processing mark4.8 [test]:  18%|█▊        | 18/100 [00:01<00:05, 13.72file/s]
+Processing mark4.8 [test]:  20%|██        | 20/100 [00:01<00:05, 13.79file/s]
+Processing mark4.8 [test]:  23%|██▎       | 23/100 [00:01<00:04, 16.00file/s]
+Processing mark4.8 [test]:  25%|██▌       | 25/100 [00:01<00:04, 15.89file/s]
+Processing mark4.8 [test]:  28%|██▊       | 28/100 [00:01<00:04, 17.50file/s]
+Processing mark4.8 [test]:  30%|███       | 30/100 [00:01<00:04, 15.00file/s]
+Processing mark4.8 [test]:  33%|███▎      | 33/100 [00:02<00:04, 16.75file/s]
+Processing mark4.8 [test]:  36%|███▌      | 36/100 [00:02<00:03, 17.51file/s]
+Processing mark4.8 [test]:  38%|███▊      | 38/100 [00:02<00:03, 16.79file/s]
+Processing mark4.8 [test]:  40%|████      | 40/100 [00:02<00:03, 16.21file/s]
+Processing mark4.8 [test]:  42%|████▏     | 42/100 [00:02<00:03, 16.63file/s]
+Processing mark4.8 [test]:  44%|████▍     | 44/100 [00:02<00:03, 17.06file/s]
+Processing mark4.8 [test]:  46%|████▌     | 46/100 [00:02<00:03, 16.87file/s]
+Processing mark4.8 [test]:  48%|████▊     | 48/100 [00:03<00:03, 14.55file/s]
+Processing mark4.8 [test]:  50%|█████     | 50/100 [00:03<00:03, 14.59file/s]
+Processing mark4.8 [test]:  52%|█████▏    | 52/100 [00:03<00:03, 14.37file/s]
+Processing mark4.8 [test]:  54%|█████▍    | 54/100 [00:03<00:03, 13.88file/s]
+Processing mark4.8 [test]:  56%|█████▌    | 56/100 [00:03<00:03, 14.58file/s]
+Processing mark4.8 [test]:  58%|█████▊    | 58/100 [00:03<00:02, 14.44file/s]
+Processing mark4.8 [test]:  61%|██████    | 61/100 [00:03<00:02, 16.47file/s]
+Processing mark4.8 [test]:  63%|██████▎   | 63/100 [00:04<00:02, 15.27file/s]
+Processing mark4.8 [test]:  65%|██████▌   | 65/100 [00:04<00:02, 14.96file/s]
+Processing mark4.8 [test]:  67%|██████▋   | 67/100 [00:04<00:02, 13.42file/s]
+Processing mark4.8 [test]:  70%|███████   | 70/100 [00:04<00:01, 15.35file/s]
+Processing mark4.8 [test]:  73%|███████▎  | 73/100 [00:04<00:01, 16.53file/s]
+Processing mark4.8 [test]:  75%|███████▌  | 75/100 [00:04<00:01, 16.72file/s]
+Processing mark4.8 [test]:  77%|███████▋  | 77/100 [00:04<00:01, 17.43file/s]
+Processing mark4.8 [test]:  79%|███████▉  | 79/100 [00:04<00:01, 17.87file/s]
+Processing mark4.8 [test]:  81%|████████  | 81/100 [00:05<00:01, 16.11file/s]
+Processing mark4.8 [test]:  83%|████████▎ | 83/100 [00:05<00:01, 16.64file/s]
+Processing mark4.8 [test]:  86%|████████▌ | 86/100 [00:05<00:00, 18.16file/s]
+Processing mark4.8 [test]:  88%|████████▊ | 88/100 [00:05<00:00, 16.69file/s]
+Processing mark4.8 [test]:  91%|█████████ | 91/100 [00:05<00:00, 18.61file/s]
+Processing mark4.8 [test]:  94%|█████████▍| 94/100 [00:05<00:00, 18.98file/s]
+Processing mark4.8 [test]:  96%|█████████▌| 96/100 [00:05<00:00, 17.46file/s]
+Processing mark4.8 [test]:  98%|█████████▊| 98/100 [00:06<00:00, 17.19file/s]
+Processing mark4.8 [test]: 100%|██████████| 100/100 [00:06<00:00, 14.78file/s]
+Processing mark4.8 [test]: 100%|██████████| 100/100 [00:06<00:00, 15.97file/s]
+
+[13:55:36] INFO - [완료] --> Step0 Preprocess Audio (소요시간: 75.86초)
+[13:55:36] INFO - 
+[실행 시작] --> Step1 Generate Dataset Index
+[13:55:36] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/generate_dataset_index.py --mark_version mark4.8
+[13:57:13] INFO - [STDOUT]
+Global seed set to 42
+
+[INFO] Checking data directory: /mnt/c/workspace/journal/codes/mark4_refactored/data
+--- Generating dataset index for: mark4.8 ---
+  Data source directory: /mnt/c/workspace/journal/codes/mark4_refactored/data (scanning train/val/test)
+  Output CSV file: dataset_index_mark4.8.csv
+  Output PKL file: dataset_index_mark4.8.pkl
+
+Saved 400 entries to:
+  - CSV: /mnt/c/workspace/journal/codes/mark4_refactored/dataset_index_mark4.8.csv
+  - PKL: /mnt/c/workspace/journal/codes/mark4_refactored/dataset_index_mark4.8.pkl
+
+--- Summary ---
+
+Total .wav files scanned: 400
+Total labeled entries written: 400
+
+[Label Distribution]
+  dog_bark: 200 files
+  others: 200 files
+[완료] 라벨 분포 시각화 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/label_dist_mark4.8.png
+
+[13:57:13] INFO - [완료] --> Step1 Generate Dataset Index (소요시간: 96.78초)
+[13:57:13] INFO - 
+[실행 시작] --> Step2 Teacher Model Train
+[13:57:13] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/teacher_train.py --mark_version mark4.8
+[14:02:50] INFO - [STDOUT]
+Global seed set to 42
+[INFO] Teacher training started for mark4.8 on cpu
+[Epoch 1] Train 0.6503 | Val 0.6613
+[INFO] Improved. Saved best teacher.
+[Epoch 2] Train 0.6066 | Val 0.6111
+[INFO] Improved. Saved best teacher.
+[Epoch 3] Train 0.5968 | Val 0.6155
+[Epoch 4] Train 0.5844 | Val 0.5983
+[INFO] Improved. Saved best teacher.
+[Epoch 5] Train 0.5840 | Val 0.6301
+[Epoch 6] Train 0.5705 | Val 0.6573
+[Epoch 7] Train 0.5886 | Val 0.6841
+[Epoch 8] Train 0.5784 | Val 0.6103
+[Epoch 9] Train 0.5561 | Val 0.6436
+[Epoch 10] Train 0.5718 | Val 0.5935
+[INFO] Improved. Saved best teacher.
+[Epoch 11] Train 0.5425 | Val 0.6343
+[Epoch 12] Train 0.5674 | Val 0.6024
+[Epoch 13] Train 0.5389 | Val 0.6241
+[Epoch 14] Train 0.5330 | Val 0.6239
+[Epoch 15] Train 0.5208 | Val 0.6150
+[Epoch 16] Train 0.5262 | Val 0.6019
+[Epoch 17] Train 0.5326 | Val 0.6313
+[Epoch 18] Train 0.5282 | Val 0.6468
+[Epoch 19] Train 0.5281 | Val 0.6622
+[Epoch 20] Train 0.5267 | Val 0.6027
+[INFO] Early stopping.
+[INFO] Loss curve saved: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_curve_teacher_train_val_mark4.8.png
+
+[14:02:50] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/vild/vild_parser_common.py:67: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+[INFO] Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  4.90it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  4.89it/s]
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00, 25.32it/s]
+
+[14:02:50] INFO - [완료] --> Step2 Teacher Model Train (소요시간: 337.35초)
+[14:02:50] INFO - 
+[실행 시작] --> Step3 Extract Hard Labels
+[14:02:50] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/extraction/extract_hard_labels.py --mark_version mark4.8
+[14:04:34] INFO - [STDOUT]
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/hard_labels_mark4.8.pkl
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/extraction/hard_labels_mark4.8.pkl
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/hard_labels_mark4.8.pkl
+[완료] hard_labels(train+val) 저장: 300 files
+
+[14:04:34] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/vild/vild_parser_common.py:67: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+
+Hard labels (mark4.8):   0%|          | 0/400 [00:00<?, ?it/s]
+Hard labels (mark4.8):  25%|██▌       | 101/400 [00:00<00:00, 402.01it/s]
+Hard labels (mark4.8):  36%|███▌      | 142/400 [00:01<00:03, 78.42it/s] 
+Hard labels (mark4.8):  40%|████      | 161/400 [00:02<00:03, 63.02it/s]
+Hard labels (mark4.8):  43%|████▎     | 173/400 [00:02<00:03, 56.98it/s]
+Hard labels (mark4.8):  46%|████▌     | 182/400 [00:02<00:04, 52.10it/s]
+Hard labels (mark4.8):  47%|████▋     | 189/400 [00:02<00:04, 48.72it/s]
+Hard labels (mark4.8):  49%|████▉     | 195/400 [00:03<00:04, 45.15it/s]
+Hard labels (mark4.8):  50%|█████     | 200/400 [00:03<00:04, 41.68it/s]
+Hard labels (mark4.8):  51%|█████▏    | 205/400 [00:03<00:05, 34.85it/s]
+Hard labels (mark4.8):  52%|█████▏    | 209/400 [00:03<00:06, 30.51it/s]
+Hard labels (mark4.8):  53%|█████▎    | 212/400 [00:03<00:06, 28.68it/s]
+Hard labels (mark4.8):  54%|█████▍    | 215/400 [00:04<00:07, 25.50it/s]
+Hard labels (mark4.8):  55%|█████▍    | 218/400 [00:04<00:07, 24.39it/s]
+Hard labels (mark4.8):  55%|█████▌    | 221/400 [00:04<00:07, 24.29it/s]
+Hard labels (mark4.8):  56%|█████▌    | 224/400 [00:04<00:07, 22.39it/s]
+Hard labels (mark4.8):  57%|█████▋    | 227/400 [00:04<00:08, 21.06it/s]
+Hard labels (mark4.8):  58%|█████▊    | 231/400 [00:04<00:07, 23.92it/s]
+Hard labels (mark4.8):  58%|█████▊    | 234/400 [00:04<00:07, 22.84it/s]
+Hard labels (mark4.8):  60%|█████▉    | 238/400 [00:04<00:06, 26.50it/s]
+Hard labels (mark4.8):  60%|██████    | 241/400 [00:05<00:05, 27.31it/s]
+Hard labels (mark4.8):  61%|██████    | 244/400 [00:05<00:05, 27.02it/s]
+Hard labels (mark4.8):  62%|██████▏   | 247/400 [00:05<00:05, 25.98it/s]
+Hard labels (mark4.8):  62%|██████▎   | 250/400 [00:05<00:05, 26.99it/s]
+Hard labels (mark4.8):  63%|██████▎   | 253/400 [00:05<00:05, 24.99it/s]
+Hard labels (mark4.8):  64%|██████▍   | 256/400 [00:05<00:05, 26.11it/s]
+Hard labels (mark4.8):  65%|██████▍   | 259/400 [00:05<00:05, 24.85it/s]
+Hard labels (mark4.8):  66%|██████▌   | 262/400 [00:05<00:05, 24.59it/s]
+Hard labels (mark4.8):  66%|██████▋   | 266/400 [00:06<00:05, 26.18it/s]
+Hard labels (mark4.8):  68%|██████▊   | 270/400 [00:06<00:04, 28.81it/s]
+Hard labels (mark4.8):  68%|██████▊   | 273/400 [00:06<00:04, 27.31it/s]
+Hard labels (mark4.8):  69%|██████▉   | 276/400 [00:06<00:04, 25.64it/s]
+Hard labels (mark4.8):  70%|███████   | 280/400 [00:06<00:04, 28.46it/s]
+Hard labels (mark4.8):  71%|███████   | 284/400 [00:06<00:04, 28.52it/s]
+Hard labels (mark4.8):  72%|███████▏  | 287/400 [00:06<00:04, 24.75it/s]
+Hard labels (mark4.8):  73%|███████▎  | 291/400 [00:06<00:03, 27.43it/s]
+Hard labels (mark4.8):  74%|███████▎  | 294/400 [00:07<00:04, 22.37it/s]
+Hard labels (mark4.8):  74%|███████▍  | 298/400 [00:07<00:04, 25.01it/s]
+Hard labels (mark4.8):  75%|███████▌  | 301/400 [00:07<00:03, 25.28it/s]
+Hard labels (mark4.8):  76%|███████▋  | 305/400 [00:07<00:03, 27.35it/s]
+Hard labels (mark4.8):  77%|███████▋  | 309/400 [00:07<00:03, 28.91it/s]
+Hard labels (mark4.8):  78%|███████▊  | 313/400 [00:07<00:02, 29.99it/s]
+Hard labels (mark4.8):  79%|███████▉  | 317/400 [00:07<00:02, 28.02it/s]
+Hard labels (mark4.8):  80%|████████  | 321/400 [00:08<00:02, 29.91it/s]
+Hard labels (mark4.8):  81%|████████▏ | 325/400 [00:08<00:02, 30.14it/s]
+Hard labels (mark4.8):  82%|████████▏ | 329/400 [00:08<00:02, 28.69it/s]
+Hard labels (mark4.8):  83%|████████▎ | 333/400 [00:08<00:02, 29.80it/s]
+Hard labels (mark4.8):  84%|████████▍ | 337/400 [00:08<00:02, 30.24it/s]
+Hard labels (mark4.8):  85%|████████▌ | 341/400 [00:08<00:02, 29.08it/s]
+Hard labels (mark4.8):  86%|████████▌ | 344/400 [00:08<00:01, 29.26it/s]
+Hard labels (mark4.8):  87%|████████▋ | 347/400 [00:08<00:01, 28.93it/s]
+Hard labels (mark4.8):  88%|████████▊ | 351/400 [00:09<00:01, 30.12it/s]
+Hard labels (mark4.8):  89%|████████▉ | 355/400 [00:09<00:01, 32.16it/s]
+Hard labels (mark4.8):  90%|████████▉ | 359/400 [00:09<00:01, 28.66it/s]
+Hard labels (mark4.8):  90%|█████████ | 362/400 [00:09<00:01, 28.50it/s]
+Hard labels (mark4.8):  91%|█████████▏| 365/400 [00:09<00:01, 28.32it/s]
+Hard labels (mark4.8):  92%|█████████▏| 368/400 [00:09<00:01, 27.80it/s]
+Hard labels (mark4.8):  93%|█████████▎| 371/400 [00:09<00:01, 27.42it/s]
+Hard labels (mark4.8):  94%|█████████▍| 375/400 [00:09<00:00, 28.99it/s]
+Hard labels (mark4.8):  94%|█████████▍| 378/400 [00:10<00:00, 28.66it/s]
+Hard labels (mark4.8):  95%|█████████▌| 381/400 [00:10<00:00, 26.38it/s]
+Hard labels (mark4.8):  96%|█████████▋| 385/400 [00:10<00:00, 28.84it/s]
+Hard labels (mark4.8):  97%|█████████▋| 388/400 [00:10<00:00, 25.72it/s]
+Hard labels (mark4.8):  98%|█████████▊| 392/400 [00:10<00:00, 25.91it/s]
+Hard labels (mark4.8):  99%|█████████▉| 396/400 [00:10<00:00, 28.15it/s]
+Hard labels (mark4.8): 100%|██████████| 400/400 [00:10<00:00, 37.11it/s]
+
+[14:04:34] INFO - [완료] --> Step3 Extract Hard Labels (소요시간: 103.69초)
+[14:04:34] INFO - 
+[실행 시작] --> Step4 Extract Soft Labels
+[14:04:34] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/extraction/extract_soft_labels.py --mark_version mark4.8
+[14:07:56] INFO - [STDOUT]
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/soft_labels_mark4.8.pkl
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/extraction/soft_labels_mark4.8.pkl
+[INFO] Saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/soft_labels_mark4.8.pkl
+[완료] soft_labels(train+val) 저장: 300 files
+
+[14:07:56] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/shared_vild/checkpoint_utils.py:82: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(path, map_location=map_location)
+[INFO] Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  4.55it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  4.54it/s]
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00, 27.08it/s]
+/mnt/c/workspace/journal/codes/mark4_refactored/vild/vild_parser_common.py:67: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+
+Soft labels (mark4.8):   0%|          | 0/400 [00:00<?, ?it/s]
+Soft labels (mark4.8):  25%|██▌       | 101/400 [00:00<00:00, 655.97it/s]
+Soft labels (mark4.8):  42%|████▏     | 167/400 [00:02<00:04, 49.75it/s] 
+Soft labels (mark4.8):  49%|████▉     | 196/400 [00:03<00:04, 41.24it/s]
+Soft labels (mark4.8):  53%|█████▎    | 213/400 [00:04<00:05, 33.91it/s]
+Soft labels (mark4.8):  56%|█████▌    | 224/400 [00:05<00:05, 30.09it/s]
+Soft labels (mark4.8):  58%|█████▊    | 232/400 [00:05<00:05, 28.59it/s]
+Soft labels (mark4.8):  60%|█████▉    | 238/400 [00:06<00:05, 28.11it/s]
+Soft labels (mark4.8):  61%|██████    | 243/400 [00:06<00:05, 27.28it/s]
+Soft labels (mark4.8):  62%|██████▏   | 247/400 [00:06<00:05, 25.99it/s]
+Soft labels (mark4.8):  63%|██████▎   | 251/400 [00:06<00:06, 24.64it/s]
+Soft labels (mark4.8):  64%|██████▎   | 254/400 [00:06<00:06, 24.21it/s]
+Soft labels (mark4.8):  64%|██████▍   | 257/400 [00:07<00:06, 23.50it/s]
+Soft labels (mark4.8):  65%|██████▌   | 260/400 [00:07<00:06, 23.33it/s]
+Soft labels (mark4.8):  66%|██████▌   | 263/400 [00:07<00:06, 22.34it/s]
+Soft labels (mark4.8):  66%|██████▋   | 266/400 [00:07<00:06, 21.73it/s]
+Soft labels (mark4.8):  67%|██████▋   | 269/400 [00:07<00:05, 22.80it/s]
+Soft labels (mark4.8):  68%|██████▊   | 272/400 [00:07<00:05, 22.75it/s]
+Soft labels (mark4.8):  69%|██████▉   | 275/400 [00:07<00:05, 21.63it/s]
+Soft labels (mark4.8):  70%|██████▉   | 278/400 [00:08<00:05, 22.54it/s]
+Soft labels (mark4.8):  70%|███████   | 281/400 [00:08<00:05, 22.81it/s]
+Soft labels (mark4.8):  71%|███████   | 284/400 [00:08<00:04, 23.52it/s]
+Soft labels (mark4.8):  72%|███████▏  | 287/400 [00:08<00:05, 20.14it/s]
+Soft labels (mark4.8):  72%|███████▎  | 290/400 [00:08<00:05, 21.68it/s]
+Soft labels (mark4.8):  73%|███████▎  | 293/400 [00:08<00:05, 20.72it/s]
+Soft labels (mark4.8):  74%|███████▍  | 296/400 [00:08<00:05, 19.78it/s]
+Soft labels (mark4.8):  75%|███████▍  | 299/400 [00:09<00:04, 21.29it/s]
+Soft labels (mark4.8):  76%|███████▌  | 302/400 [00:09<00:04, 21.14it/s]
+Soft labels (mark4.8):  76%|███████▋  | 305/400 [00:09<00:04, 22.60it/s]
+Soft labels (mark4.8):  77%|███████▋  | 308/400 [00:09<00:03, 23.86it/s]
+Soft labels (mark4.8):  78%|███████▊  | 311/400 [00:09<00:03, 22.43it/s]
+Soft labels (mark4.8):  79%|███████▉  | 315/400 [00:09<00:03, 23.43it/s]
+Soft labels (mark4.8):  80%|███████▉  | 318/400 [00:09<00:03, 22.91it/s]
+Soft labels (mark4.8):  80%|████████  | 321/400 [00:09<00:03, 23.91it/s]
+Soft labels (mark4.8):  81%|████████▏ | 325/400 [00:10<00:03, 24.12it/s]
+Soft labels (mark4.8):  82%|████████▏ | 328/400 [00:10<00:02, 24.65it/s]
+Soft labels (mark4.8):  83%|████████▎ | 331/400 [00:10<00:02, 23.40it/s]
+Soft labels (mark4.8):  84%|████████▎ | 334/400 [00:10<00:02, 24.32it/s]
+Soft labels (mark4.8):  84%|████████▍ | 337/400 [00:10<00:02, 23.87it/s]
+Soft labels (mark4.8):  85%|████████▌ | 340/400 [00:10<00:02, 24.13it/s]
+Soft labels (mark4.8):  86%|████████▌ | 343/400 [00:10<00:02, 22.99it/s]
+Soft labels (mark4.8):  86%|████████▋ | 346/400 [00:10<00:02, 23.05it/s]
+Soft labels (mark4.8):  87%|████████▋ | 349/400 [00:11<00:02, 24.00it/s]
+Soft labels (mark4.8):  88%|████████▊ | 352/400 [00:11<00:01, 25.09it/s]
+Soft labels (mark4.8):  89%|████████▉ | 355/400 [00:11<00:01, 25.25it/s]
+Soft labels (mark4.8):  90%|████████▉ | 358/400 [00:11<00:01, 22.64it/s]
+Soft labels (mark4.8):  90%|█████████ | 361/400 [00:11<00:01, 24.04it/s]
+Soft labels (mark4.8):  91%|█████████ | 364/400 [00:11<00:01, 23.32it/s]
+Soft labels (mark4.8):  92%|█████████▏| 367/400 [00:11<00:01, 21.79it/s]
+Soft labels (mark4.8):  93%|█████████▎| 371/400 [00:12<00:01, 22.18it/s]
+Soft labels (mark4.8):  94%|█████████▎| 374/400 [00:12<00:01, 23.51it/s]
+Soft labels (mark4.8):  94%|█████████▍| 377/400 [00:12<00:00, 23.78it/s]
+Soft labels (mark4.8):  95%|█████████▌| 380/400 [00:12<00:00, 24.30it/s]
+Soft labels (mark4.8):  96%|█████████▌| 383/400 [00:12<00:00, 22.19it/s]
+Soft labels (mark4.8):  96%|█████████▋| 386/400 [00:12<00:00, 21.07it/s]
+Soft labels (mark4.8):  97%|█████████▋| 389/400 [00:12<00:00, 21.58it/s]
+Soft labels (mark4.8):  98%|█████████▊| 392/400 [00:13<00:00, 20.00it/s]
+Soft labels (mark4.8):  99%|█████████▉| 395/400 [00:13<00:00, 20.97it/s]
+Soft labels (mark4.8): 100%|█████████▉| 398/400 [00:13<00:00, 22.21it/s]
+Soft labels (mark4.8): 100%|██████████| 400/400 [00:13<00:00, 29.93it/s]
+
+[14:07:56] INFO - [완료] --> Step4 Extract Soft Labels (소요시간: 202.22초)
+[14:07:56] INFO - 
+[실행 시작] --> Step5 Student Distillation Train
+[14:07:56] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/student_train_distillation.py --mark_version mark4.8
+[14:20:18] INFO - [STDOUT]
+Global seed set to 42
+[INFO] Student KD training for mark4.8 on cpu
+
+[Epoch 1] Train 0.350207 | Val 0.324990 | Hard 0.609384 | Soft 0.022528 | Feat 0.421351
+[EarlyStopping] Val loss inf -> 0.324990. Saving...
+
+[Epoch 2] Train 0.305542 | Val 0.302854 | Hard 0.590505 | Soft 0.043029 | Feat 0.318606
+[EarlyStopping] Val loss 0.324990 -> 0.302854. Saving...
+
+[Epoch 3] Train 0.289797 | Val 0.269128 | Hard 0.600830 | Soft 0.012644 | Feat 0.266763
+[EarlyStopping] Val loss 0.302854 -> 0.269128. Saving...
+
+[Epoch 4] Train 0.273017 | Val 0.258649 | Hard 0.593934 | Soft 0.013842 | Feat 0.235931
+[EarlyStopping] Val loss 0.269128 -> 0.258649. Saving...
+
+[Epoch 5] Train 0.264473 | Val 0.257790 | Hard 0.598314 | Soft 0.017984 | Feat 0.219025
+[EarlyStopping] Val loss 0.258649 -> 0.257790. Saving...
+
+[Epoch 6] Train 0.258691 | Val 0.257430 | Hard 0.605483 | Soft 0.018911 | Feat 0.208491
+[EarlyStopping] Val loss 0.257790 -> 0.257430. Saving...
+
+[Epoch 7] Train 0.256819 | Val 0.254168 | Hard 0.610831 | Soft 0.016019 | Feat 0.199016
+[EarlyStopping] Val loss 0.257430 -> 0.254168. Saving...
+
+[Epoch 8] Train 0.247156 | Val 0.249260 | Hard 0.607407 | Soft 0.013015 | Feat 0.193092
+[EarlyStopping] Val loss 0.254168 -> 0.249260. Saving...
+
+[Epoch 9] Train 0.253714 | Val 0.245161 | Hard 0.600255 | Soft 0.012002 | Feat 0.188944
+[EarlyStopping] Val loss 0.249260 -> 0.245161. Saving...
+
+[Epoch 10] Train 0.247979 | Val 0.249054 | Hard 0.601424 | Soft 0.018160 | Feat 0.186382
+[EarlyStopping] counter: 1/10
+
+[Epoch 11] Train 0.254398 | Val 0.248686 | Hard 0.607736 | Soft 0.015952 | Feat 0.183994
+[EarlyStopping] counter: 2/10
+
+[Epoch 12] Train 0.250754 | Val 0.249956 | Hard 0.613897 | Soft 0.015356 | Feat 0.183459
+[EarlyStopping] counter: 3/10
+
+[Epoch 13] Train 0.243335 | Val 0.249959 | Hard 0.607249 | Soft 0.019491 | Feat 0.180470
+[EarlyStopping] counter: 4/10
+[LR] 0.0001 -> 5e-05 (val=0.249959)
+
+[Epoch 14] Train 0.246465 | Val 0.245561 | Hard 0.614886 | Soft 0.010168 | Feat 0.179927
+[EarlyStopping] counter: 5/10
+
+[Epoch 15] Train 0.239140 | Val 0.247069 | Hard 0.614004 | Soft 0.012802 | Feat 0.179687
+[EarlyStopping] counter: 6/10
+
+[Epoch 16] Train 0.241644 | Val 0.245008 | Hard 0.607194 | Soft 0.012639 | Feat 0.180008
+[EarlyStopping] Val loss 0.245161 -> 0.245008. Saving...
+
+[Epoch 17] Train 0.234918 | Val 0.246360 | Hard 0.609850 | Soft 0.014024 | Feat 0.178627
+[EarlyStopping] counter: 1/10
+
+[Epoch 18] Train 0.245267 | Val 0.244617 | Hard 0.601811 | Soft 0.015089 | Feat 0.178371
+[EarlyStopping] Val loss 0.245008 -> 0.244617. Saving...
+
+[Epoch 19] Train 0.244086 | Val 0.243053 | Hard 0.607512 | Soft 0.010762 | Feat 0.177555
+[EarlyStopping] Val loss 0.244617 -> 0.243053. Saving...
+
+[Epoch 20] Train 0.244310 | Val 0.247433 | Hard 0.612243 | Soft 0.014917 | Feat 0.177725
+[EarlyStopping] counter: 1/10
+
+[Epoch 21] Train 0.234982 | Val 0.242757 | Hard 0.601871 | Soft 0.012867 | Feat 0.177296
+[EarlyStopping] Val loss 0.243053 -> 0.242757. Saving...
+
+[Epoch 22] Train 0.238407 | Val 0.245194 | Hard 0.606478 | Soft 0.014807 | Feat 0.176286
+[EarlyStopping] counter: 1/10
+
+[Epoch 23] Train 0.235105 | Val 0.245218 | Hard 0.607682 | Soft 0.014304 | Feat 0.176336
+[EarlyStopping] counter: 2/10
+
+[Epoch 24] Train 0.242017 | Val 0.242753 | Hard 0.606570 | Soft 0.011386 | Feat 0.176038
+[EarlyStopping] Val loss 0.242757 -> 0.242753. Saving...
+
+[Epoch 25] Train 0.237482 | Val 0.241423 | Hard 0.600467 | Soft 0.012083 | Feat 0.176082
+[EarlyStopping] Val loss 0.242753 -> 0.241423. Saving...
+
+[Epoch 26] Train 0.236848 | Val 0.243424 | Hard 0.606412 | Soft 0.012715 | Feat 0.175335
+[EarlyStopping] counter: 1/10
+
+[Epoch 27] Train 0.239872 | Val 0.240552 | Hard 0.600554 | Soft 0.011174 | Feat 0.175214
+[EarlyStopping] Val loss 0.241423 -> 0.240552. Saving...
+
+[Epoch 28] Train 0.234542 | Val 0.243601 | Hard 0.607602 | Soft 0.012617 | Feat 0.174962
+[EarlyStopping] counter: 1/10
+
+[Epoch 29] Train 0.237305 | Val 0.241465 | Hard 0.603512 | Soft 0.011394 | Feat 0.174785
+[EarlyStopping] counter: 2/10
+
+[Epoch 30] Train 0.234501 | Val 0.243884 | Hard 0.604936 | Soft 0.014596 | Feat 0.173952
+[EarlyStopping] counter: 3/10
+
+[Epoch 31] Train 0.235402 | Val 0.242673 | Hard 0.605233 | Soft 0.012829 | Feat 0.173740
+[EarlyStopping] counter: 4/10
+[LR] 5e-05 -> 2.5e-05 (val=0.242673)
+
+[Epoch 32] Train 0.232532 | Val 0.244574 | Hard 0.609288 | Soft 0.013818 | Feat 0.173718
+[EarlyStopping] counter: 5/10
+
+[Epoch 33] Train 0.233534 | Val 0.242835 | Hard 0.604691 | Soft 0.013356 | Feat 0.173594
+[EarlyStopping] counter: 6/10
+
+[Epoch 34] Train 0.232259 | Val 0.243424 | Hard 0.607316 | Soft 0.013051 | Feat 0.173647
+[EarlyStopping] counter: 7/10
+
+[Epoch 35] Train 0.235943 | Val 0.243302 | Hard 0.606898 | Soft 0.013166 | Feat 0.173389
+[EarlyStopping] counter: 8/10
+[LR] 2.5e-05 -> 1.25e-05 (val=0.243302)
+
+[Epoch 36] Train 0.231868 | Val 0.244718 | Hard 0.611436 | Soft 0.013161 | Feat 0.173580
+[EarlyStopping] counter: 9/10
+
+[Epoch 37] Train 0.232017 | Val 0.243799 | Hard 0.608546 | Soft 0.012981 | Feat 0.173831
+[EarlyStopping] counter: 10/10
+[INFO] Early stopping.
+[INFO] Saved loss curve: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_curve_distilled_student_mark4.8.png
+[INFO] 손실곡선 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/loss_history_mark4.8.csv
+[INFO] Best saved: /mnt/c/workspace/journal/codes/mark4_refactored/model/distilled_student_encoder_mark4.8.pth, /mnt/c/workspace/journal/codes/mark4_refactored/model/distilled_student_head_mark4.8.pth (val loss 0.240552)
+
+[14:20:18] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/vild/vild_parser_common.py:67: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+[INFO] Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  5.75it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  5.74it/s]
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00, 26.44it/s]
+
+[Train 1]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 1]:   8%|▊         | 1/13 [00:01<00:13,  1.09s/it]
+[Train 1]:  15%|█▌        | 2/13 [00:01<00:10,  1.07it/s]
+[Train 1]:  23%|██▎       | 3/13 [00:02<00:08,  1.15it/s]
+[Train 1]:  31%|███       | 4/13 [00:03<00:07,  1.20it/s]
+[Train 1]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 1]:  46%|████▌     | 6/13 [00:05<00:05,  1.19it/s]
+[Train 1]:  54%|█████▍    | 7/13 [00:05<00:04,  1.21it/s]
+[Train 1]:  62%|██████▏   | 8/13 [00:06<00:04,  1.16it/s]
+[Train 1]:  69%|██████▉   | 9/13 [00:07<00:03,  1.17it/s]
+[Train 1]:  77%|███████▋  | 10/13 [00:08<00:02,  1.13it/s]
+[Train 1]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 1]:  92%|█████████▏| 12/13 [00:10<00:00,  1.19it/s]
+[Train 1]: 100%|██████████| 13/13 [00:10<00:00,  1.39it/s]
+[Train 1]: 100%|██████████| 13/13 [00:10<00:00,  1.21it/s]
+
+[Train 2]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 2]:   8%|▊         | 1/13 [00:00<00:09,  1.28it/s]
+[Train 2]:  15%|█▌        | 2/13 [00:01<00:09,  1.17it/s]
+[Train 2]:  23%|██▎       | 3/13 [00:02<00:09,  1.11it/s]
+[Train 2]:  31%|███       | 4/13 [00:03<00:07,  1.20it/s]
+[Train 2]:  38%|███▊      | 5/13 [00:04<00:06,  1.20it/s]
+[Train 2]:  46%|████▌     | 6/13 [00:04<00:05,  1.23it/s]
+[Train 2]:  54%|█████▍    | 7/13 [00:05<00:04,  1.22it/s]
+[Train 2]:  62%|██████▏   | 8/13 [00:06<00:04,  1.24it/s]
+[Train 2]:  69%|██████▉   | 9/13 [00:07<00:03,  1.18it/s]
+[Train 2]:  77%|███████▋  | 10/13 [00:08<00:02,  1.19it/s]
+[Train 2]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 2]:  92%|█████████▏| 12/13 [00:10<00:00,  1.16it/s]
+[Train 2]: 100%|██████████| 13/13 [00:10<00:00,  1.38it/s]
+[Train 2]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 3]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 3]:   8%|▊         | 1/13 [00:00<00:11,  1.08it/s]
+[Train 3]:  15%|█▌        | 2/13 [00:01<00:09,  1.11it/s]
+[Train 3]:  23%|██▎       | 3/13 [00:02<00:08,  1.15it/s]
+[Train 3]:  31%|███       | 4/13 [00:03<00:08,  1.10it/s]
+[Train 3]:  38%|███▊      | 5/13 [00:04<00:06,  1.19it/s]
+[Train 3]:  46%|████▌     | 6/13 [00:05<00:05,  1.25it/s]
+[Train 3]:  54%|█████▍    | 7/13 [00:05<00:04,  1.22it/s]
+[Train 3]:  62%|██████▏   | 8/13 [00:06<00:04,  1.22it/s]
+[Train 3]:  69%|██████▉   | 9/13 [00:07<00:03,  1.23it/s]
+[Train 3]:  77%|███████▋  | 10/13 [00:08<00:02,  1.20it/s]
+[Train 3]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 3]:  92%|█████████▏| 12/13 [00:10<00:00,  1.17it/s]
+[Train 3]: 100%|██████████| 13/13 [00:10<00:00,  1.38it/s]
+[Train 3]: 100%|██████████| 13/13 [00:10<00:00,  1.23it/s]
+
+[Train 4]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 4]:   8%|▊         | 1/13 [00:00<00:09,  1.22it/s]
+[Train 4]:  15%|█▌        | 2/13 [00:01<00:09,  1.18it/s]
+[Train 4]:  23%|██▎       | 3/13 [00:02<00:08,  1.13it/s]
+[Train 4]:  31%|███       | 4/13 [00:03<00:07,  1.16it/s]
+[Train 4]:  38%|███▊      | 5/13 [00:04<00:07,  1.09it/s]
+[Train 4]:  46%|████▌     | 6/13 [00:05<00:06,  1.13it/s]
+[Train 4]:  54%|█████▍    | 7/13 [00:06<00:05,  1.15it/s]
+[Train 4]:  62%|██████▏   | 8/13 [00:06<00:04,  1.17it/s]
+[Train 4]:  69%|██████▉   | 9/13 [00:07<00:03,  1.20it/s]
+[Train 4]:  77%|███████▋  | 10/13 [00:08<00:02,  1.16it/s]
+[Train 4]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 4]:  92%|█████████▏| 12/13 [00:10<00:00,  1.22it/s]
+[Train 4]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 4]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 5]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 5]:   8%|▊         | 1/13 [00:00<00:10,  1.15it/s]
+[Train 5]:  15%|█▌        | 2/13 [00:01<00:09,  1.15it/s]
+[Train 5]:  23%|██▎       | 3/13 [00:02<00:08,  1.12it/s]
+[Train 5]:  31%|███       | 4/13 [00:03<00:07,  1.21it/s]
+[Train 5]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 5]:  46%|████▌     | 6/13 [00:05<00:05,  1.20it/s]
+[Train 5]:  54%|█████▍    | 7/13 [00:05<00:04,  1.24it/s]
+[Train 5]:  62%|██████▏   | 8/13 [00:06<00:04,  1.23it/s]
+[Train 5]:  69%|██████▉   | 9/13 [00:07<00:03,  1.25it/s]
+[Train 5]:  77%|███████▋  | 10/13 [00:08<00:02,  1.21it/s]
+[Train 5]:  85%|████████▍ | 11/13 [00:09<00:01,  1.23it/s]
+[Train 5]:  92%|█████████▏| 12/13 [00:10<00:00,  1.17it/s]
+[Train 5]: 100%|██████████| 13/13 [00:10<00:00,  1.41it/s]
+[Train 5]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 6]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 6]:   8%|▊         | 1/13 [00:00<00:09,  1.24it/s]
+[Train 6]:  15%|█▌        | 2/13 [00:01<00:09,  1.12it/s]
+[Train 6]:  23%|██▎       | 3/13 [00:02<00:09,  1.08it/s]
+[Train 6]:  31%|███       | 4/13 [00:03<00:08,  1.05it/s]
+[Train 6]:  38%|███▊      | 5/13 [00:04<00:08,  1.02s/it]
+[Train 6]:  46%|████▌     | 6/13 [00:05<00:06,  1.02it/s]
+[Train 6]:  54%|█████▍    | 7/13 [00:06<00:05,  1.06it/s]
+[Train 6]:  62%|██████▏   | 8/13 [00:07<00:04,  1.13it/s]
+[Train 6]:  69%|██████▉   | 9/13 [00:08<00:03,  1.19it/s]
+[Train 6]:  77%|███████▋  | 10/13 [00:08<00:02,  1.20it/s]
+[Train 6]:  85%|████████▍ | 11/13 [00:09<00:01,  1.21it/s]
+[Train 6]:  92%|█████████▏| 12/13 [00:10<00:00,  1.22it/s]
+[Train 6]: 100%|██████████| 13/13 [00:10<00:00,  1.43it/s]
+[Train 6]: 100%|██████████| 13/13 [00:10<00:00,  1.18it/s]
+
+[Train 7]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 7]:   8%|▊         | 1/13 [00:00<00:10,  1.14it/s]
+[Train 7]:  15%|█▌        | 2/13 [00:01<00:09,  1.13it/s]
+[Train 7]:  23%|██▎       | 3/13 [00:02<00:08,  1.18it/s]
+[Train 7]:  31%|███       | 4/13 [00:03<00:07,  1.19it/s]
+[Train 7]:  38%|███▊      | 5/13 [00:04<00:06,  1.23it/s]
+[Train 7]:  46%|████▌     | 6/13 [00:04<00:05,  1.22it/s]
+[Train 7]:  54%|█████▍    | 7/13 [00:05<00:04,  1.21it/s]
+[Train 7]:  62%|██████▏   | 8/13 [00:06<00:04,  1.24it/s]
+[Train 7]:  69%|██████▉   | 9/13 [00:07<00:03,  1.29it/s]
+[Train 7]:  77%|███████▋  | 10/13 [00:08<00:02,  1.28it/s]
+[Train 7]:  85%|████████▍ | 11/13 [00:09<00:01,  1.22it/s]
+[Train 7]:  92%|█████████▏| 12/13 [00:09<00:00,  1.20it/s]
+[Train 7]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 7]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 8]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 8]:   8%|▊         | 1/13 [00:00<00:10,  1.14it/s]
+[Train 8]:  15%|█▌        | 2/13 [00:01<00:09,  1.19it/s]
+[Train 8]:  23%|██▎       | 3/13 [00:02<00:08,  1.19it/s]
+[Train 8]:  31%|███       | 4/13 [00:03<00:07,  1.26it/s]
+[Train 8]:  38%|███▊      | 5/13 [00:04<00:06,  1.24it/s]
+[Train 8]:  46%|████▌     | 6/13 [00:04<00:05,  1.26it/s]
+[Train 8]:  54%|█████▍    | 7/13 [00:05<00:04,  1.26it/s]
+[Train 8]:  62%|██████▏   | 8/13 [00:06<00:03,  1.26it/s]
+[Train 8]:  69%|██████▉   | 9/13 [00:07<00:03,  1.20it/s]
+[Train 8]:  77%|███████▋  | 10/13 [00:08<00:02,  1.17it/s]
+[Train 8]:  85%|████████▍ | 11/13 [00:09<00:01,  1.17it/s]
+[Train 8]:  92%|█████████▏| 12/13 [00:10<00:00,  1.15it/s]
+[Train 8]: 100%|██████████| 13/13 [00:10<00:00,  1.41it/s]
+[Train 8]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 9]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 9]:   8%|▊         | 1/13 [00:00<00:11,  1.04it/s]
+[Train 9]:  15%|█▌        | 2/13 [00:01<00:09,  1.16it/s]
+[Train 9]:  23%|██▎       | 3/13 [00:02<00:08,  1.25it/s]
+[Train 9]:  31%|███       | 4/13 [00:03<00:07,  1.28it/s]
+[Train 9]:  38%|███▊      | 5/13 [00:04<00:06,  1.23it/s]
+[Train 9]:  46%|████▌     | 6/13 [00:04<00:05,  1.23it/s]
+[Train 9]:  54%|█████▍    | 7/13 [00:05<00:04,  1.28it/s]
+[Train 9]:  62%|██████▏   | 8/13 [00:06<00:04,  1.20it/s]
+[Train 9]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 9]:  77%|███████▋  | 10/13 [00:08<00:02,  1.22it/s]
+[Train 9]:  85%|████████▍ | 11/13 [00:08<00:01,  1.24it/s]
+[Train 9]:  92%|█████████▏| 12/13 [00:09<00:00,  1.24it/s]
+[Train 9]: 100%|██████████| 13/13 [00:10<00:00,  1.44it/s]
+[Train 9]: 100%|██████████| 13/13 [00:10<00:00,  1.27it/s]
+
+[Train 10]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 10]:   8%|▊         | 1/13 [00:00<00:09,  1.32it/s]
+[Train 10]:  15%|█▌        | 2/13 [00:01<00:08,  1.24it/s]
+[Train 10]:  23%|██▎       | 3/13 [00:02<00:07,  1.27it/s]
+[Train 10]:  31%|███       | 4/13 [00:03<00:07,  1.17it/s]
+[Train 10]:  38%|███▊      | 5/13 [00:04<00:06,  1.24it/s]
+[Train 10]:  46%|████▌     | 6/13 [00:04<00:05,  1.20it/s]
+[Train 10]:  54%|█████▍    | 7/13 [00:05<00:04,  1.20it/s]
+[Train 10]:  62%|██████▏   | 8/13 [00:06<00:04,  1.21it/s]
+[Train 10]:  69%|██████▉   | 9/13 [00:07<00:03,  1.19it/s]
+[Train 10]:  77%|███████▋  | 10/13 [00:08<00:02,  1.22it/s]
+[Train 10]:  85%|████████▍ | 11/13 [00:09<00:01,  1.22it/s]
+[Train 10]:  92%|█████████▏| 12/13 [00:09<00:00,  1.24it/s]
+[Train 10]: 100%|██████████| 13/13 [00:10<00:00,  1.39it/s]
+[Train 10]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 11]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 11]:   8%|▊         | 1/13 [00:00<00:10,  1.16it/s]
+[Train 11]:  15%|█▌        | 2/13 [00:01<00:09,  1.17it/s]
+[Train 11]:  23%|██▎       | 3/13 [00:02<00:08,  1.13it/s]
+[Train 11]:  31%|███       | 4/13 [00:03<00:07,  1.16it/s]
+[Train 11]:  38%|███▊      | 5/13 [00:04<00:06,  1.23it/s]
+[Train 11]:  46%|████▌     | 6/13 [00:05<00:05,  1.18it/s]
+[Train 11]:  54%|█████▍    | 7/13 [00:05<00:05,  1.20it/s]
+[Train 11]:  62%|██████▏   | 8/13 [00:06<00:04,  1.16it/s]
+[Train 11]:  69%|██████▉   | 9/13 [00:07<00:03,  1.17it/s]
+[Train 11]:  77%|███████▋  | 10/13 [00:08<00:02,  1.18it/s]
+[Train 11]:  85%|████████▍ | 11/13 [00:09<00:01,  1.20it/s]
+[Train 11]:  92%|█████████▏| 12/13 [00:10<00:00,  1.22it/s]
+[Train 11]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 11]: 100%|██████████| 13/13 [00:10<00:00,  1.23it/s]
+
+[Train 12]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 12]:   8%|▊         | 1/13 [00:00<00:10,  1.13it/s]
+[Train 12]:  15%|█▌        | 2/13 [00:01<00:10,  1.07it/s]
+[Train 12]:  23%|██▎       | 3/13 [00:02<00:09,  1.03it/s]
+[Train 12]:  31%|███       | 4/13 [00:03<00:08,  1.11it/s]
+[Train 12]:  38%|███▊      | 5/13 [00:04<00:07,  1.13it/s]
+[Train 12]:  46%|████▌     | 6/13 [00:05<00:06,  1.10it/s]
+[Train 12]:  54%|█████▍    | 7/13 [00:06<00:05,  1.16it/s]
+[Train 12]:  62%|██████▏   | 8/13 [00:07<00:04,  1.19it/s]
+[Train 12]:  69%|██████▉   | 9/13 [00:07<00:03,  1.23it/s]
+[Train 12]:  77%|███████▋  | 10/13 [00:08<00:02,  1.19it/s]
+[Train 12]:  85%|████████▍ | 11/13 [00:09<00:01,  1.15it/s]
+[Train 12]:  92%|█████████▏| 12/13 [00:10<00:00,  1.20it/s]
+[Train 12]: 100%|██████████| 13/13 [00:10<00:00,  1.45it/s]
+[Train 12]: 100%|██████████| 13/13 [00:10<00:00,  1.21it/s]
+
+[Train 13]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 13]:   8%|▊         | 1/13 [00:00<00:09,  1.22it/s]
+[Train 13]:  15%|█▌        | 2/13 [00:01<00:08,  1.26it/s]
+[Train 13]:  23%|██▎       | 3/13 [00:02<00:08,  1.21it/s]
+[Train 13]:  31%|███       | 4/13 [00:03<00:07,  1.19it/s]
+[Train 13]:  38%|███▊      | 5/13 [00:04<00:06,  1.20it/s]
+[Train 13]:  46%|████▌     | 6/13 [00:04<00:05,  1.19it/s]
+[Train 13]:  54%|█████▍    | 7/13 [00:05<00:05,  1.20it/s]
+[Train 13]:  62%|██████▏   | 8/13 [00:06<00:04,  1.23it/s]
+[Train 13]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 13]:  77%|███████▋  | 10/13 [00:08<00:02,  1.23it/s]
+[Train 13]:  85%|████████▍ | 11/13 [00:09<00:01,  1.21it/s]
+[Train 13]:  92%|█████████▏| 12/13 [00:09<00:00,  1.21it/s]
+[Train 13]: 100%|██████████| 13/13 [00:10<00:00,  1.47it/s]
+[Train 13]: 100%|██████████| 13/13 [00:10<00:00,  1.27it/s]
+
+[Train 14]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 14]:   8%|▊         | 1/13 [00:00<00:11,  1.02it/s]
+[Train 14]:  15%|█▌        | 2/13 [00:01<00:10,  1.07it/s]
+[Train 14]:  23%|██▎       | 3/13 [00:02<00:09,  1.10it/s]
+[Train 14]:  31%|███       | 4/13 [00:03<00:07,  1.18it/s]
+[Train 14]:  38%|███▊      | 5/13 [00:04<00:06,  1.15it/s]
+[Train 14]:  46%|████▌     | 6/13 [00:05<00:05,  1.17it/s]
+[Train 14]:  54%|█████▍    | 7/13 [00:06<00:05,  1.19it/s]
+[Train 14]:  62%|██████▏   | 8/13 [00:06<00:04,  1.16it/s]
+[Train 14]:  69%|██████▉   | 9/13 [00:07<00:03,  1.19it/s]
+[Train 14]:  77%|███████▋  | 10/13 [00:08<00:02,  1.18it/s]
+[Train 14]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 14]:  92%|█████████▏| 12/13 [00:10<00:00,  1.21it/s]
+[Train 14]: 100%|██████████| 13/13 [00:10<00:00,  1.45it/s]
+[Train 14]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 15]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 15]:   8%|▊         | 1/13 [00:00<00:10,  1.19it/s]
+[Train 15]:  15%|█▌        | 2/13 [00:01<00:09,  1.16it/s]
+[Train 15]:  23%|██▎       | 3/13 [00:02<00:08,  1.21it/s]
+[Train 15]:  31%|███       | 4/13 [00:03<00:07,  1.21it/s]
+[Train 15]:  38%|███▊      | 5/13 [00:04<00:06,  1.27it/s]
+[Train 15]:  46%|████▌     | 6/13 [00:04<00:05,  1.24it/s]
+[Train 15]:  54%|█████▍    | 7/13 [00:05<00:04,  1.24it/s]
+[Train 15]:  62%|██████▏   | 8/13 [00:06<00:04,  1.22it/s]
+[Train 15]:  69%|██████▉   | 9/13 [00:07<00:03,  1.26it/s]
+[Train 15]:  77%|███████▋  | 10/13 [00:08<00:02,  1.24it/s]
+[Train 15]:  85%|████████▍ | 11/13 [00:08<00:01,  1.28it/s]
+[Train 15]:  92%|█████████▏| 12/13 [00:09<00:00,  1.20it/s]
+[Train 15]: 100%|██████████| 13/13 [00:10<00:00,  1.46it/s]
+[Train 15]: 100%|██████████| 13/13 [00:10<00:00,  1.28it/s]
+
+[Train 16]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 16]:   8%|▊         | 1/13 [00:00<00:08,  1.37it/s]
+[Train 16]:  15%|█▌        | 2/13 [00:01<00:08,  1.26it/s]
+[Train 16]:  23%|██▎       | 3/13 [00:02<00:07,  1.26it/s]
+[Train 16]:  31%|███       | 4/13 [00:03<00:07,  1.24it/s]
+[Train 16]:  38%|███▊      | 5/13 [00:04<00:06,  1.21it/s]
+[Train 16]:  46%|████▌     | 6/13 [00:04<00:05,  1.24it/s]
+[Train 16]:  54%|█████▍    | 7/13 [00:05<00:04,  1.23it/s]
+[Train 16]:  62%|██████▏   | 8/13 [00:06<00:04,  1.24it/s]
+[Train 16]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 16]:  77%|███████▋  | 10/13 [00:08<00:02,  1.24it/s]
+[Train 16]:  85%|████████▍ | 11/13 [00:09<00:01,  1.17it/s]
+[Train 16]:  92%|█████████▏| 12/13 [00:09<00:00,  1.13it/s]
+[Train 16]: 100%|██████████| 13/13 [00:10<00:00,  1.37it/s]
+[Train 16]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 17]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 17]:   8%|▊         | 1/13 [00:00<00:11,  1.02it/s]
+[Train 17]:  15%|█▌        | 2/13 [00:01<00:09,  1.12it/s]
+[Train 17]:  23%|██▎       | 3/13 [00:02<00:08,  1.13it/s]
+[Train 17]:  31%|███       | 4/13 [00:03<00:07,  1.14it/s]
+[Train 17]:  38%|███▊      | 5/13 [00:04<00:06,  1.21it/s]
+[Train 17]:  46%|████▌     | 6/13 [00:05<00:05,  1.18it/s]
+[Train 17]:  54%|█████▍    | 7/13 [00:05<00:04,  1.21it/s]
+[Train 17]:  62%|██████▏   | 8/13 [00:06<00:04,  1.19it/s]
+[Train 17]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 17]:  77%|███████▋  | 10/13 [00:08<00:02,  1.25it/s]
+[Train 17]:  85%|████████▍ | 11/13 [00:09<00:01,  1.27it/s]
+[Train 17]:  92%|█████████▏| 12/13 [00:09<00:00,  1.26it/s]
+[Train 17]: 100%|██████████| 13/13 [00:10<00:00,  1.47it/s]
+[Train 17]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 18]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 18]:   8%|▊         | 1/13 [00:00<00:11,  1.04it/s]
+[Train 18]:  15%|█▌        | 2/13 [00:01<00:09,  1.11it/s]
+[Train 18]:  23%|██▎       | 3/13 [00:02<00:08,  1.17it/s]
+[Train 18]:  31%|███       | 4/13 [00:03<00:07,  1.17it/s]
+[Train 18]:  38%|███▊      | 5/13 [00:04<00:06,  1.18it/s]
+[Train 18]:  46%|████▌     | 6/13 [00:05<00:05,  1.22it/s]
+[Train 18]:  54%|█████▍    | 7/13 [00:05<00:04,  1.22it/s]
+[Train 18]:  62%|██████▏   | 8/13 [00:06<00:04,  1.23it/s]
+[Train 18]:  69%|██████▉   | 9/13 [00:07<00:03,  1.23it/s]
+[Train 18]:  77%|███████▋  | 10/13 [00:08<00:02,  1.26it/s]
+[Train 18]:  85%|████████▍ | 11/13 [00:09<00:01,  1.22it/s]
+[Train 18]:  92%|█████████▏| 12/13 [00:09<00:00,  1.23it/s]
+[Train 18]: 100%|██████████| 13/13 [00:10<00:00,  1.46it/s]
+[Train 18]: 100%|██████████| 13/13 [00:10<00:00,  1.26it/s]
+
+[Train 19]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 19]:   8%|▊         | 1/13 [00:00<00:11,  1.04it/s]
+[Train 19]:  15%|█▌        | 2/13 [00:01<00:09,  1.18it/s]
+[Train 19]:  23%|██▎       | 3/13 [00:02<00:08,  1.20it/s]
+[Train 19]:  31%|███       | 4/13 [00:03<00:07,  1.19it/s]
+[Train 19]:  38%|███▊      | 5/13 [00:04<00:06,  1.20it/s]
+[Train 19]:  46%|████▌     | 6/13 [00:04<00:05,  1.25it/s]
+[Train 19]:  54%|█████▍    | 7/13 [00:05<00:04,  1.24it/s]
+[Train 19]:  62%|██████▏   | 8/13 [00:06<00:04,  1.23it/s]
+[Train 19]:  69%|██████▉   | 9/13 [00:07<00:03,  1.15it/s]
+[Train 19]:  77%|███████▋  | 10/13 [00:08<00:02,  1.23it/s]
+[Train 19]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 19]:  92%|█████████▏| 12/13 [00:09<00:00,  1.25it/s]
+[Train 19]: 100%|██████████| 13/13 [00:10<00:00,  1.41it/s]
+[Train 19]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 20]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 20]:   8%|▊         | 1/13 [00:00<00:11,  1.08it/s]
+[Train 20]:  15%|█▌        | 2/13 [00:01<00:09,  1.12it/s]
+[Train 20]:  23%|██▎       | 3/13 [00:02<00:09,  1.10it/s]
+[Train 20]:  31%|███       | 4/13 [00:03<00:08,  1.12it/s]
+[Train 20]:  38%|███▊      | 5/13 [00:04<00:07,  1.12it/s]
+[Train 20]:  46%|████▌     | 6/13 [00:05<00:05,  1.19it/s]
+[Train 20]:  54%|█████▍    | 7/13 [00:06<00:04,  1.21it/s]
+[Train 20]:  62%|██████▏   | 8/13 [00:06<00:03,  1.25it/s]
+[Train 20]:  69%|██████▉   | 9/13 [00:07<00:03,  1.27it/s]
+[Train 20]:  77%|███████▋  | 10/13 [00:08<00:02,  1.29it/s]
+[Train 20]:  85%|████████▍ | 11/13 [00:09<00:01,  1.31it/s]
+[Train 20]:  92%|█████████▏| 12/13 [00:09<00:00,  1.31it/s]
+[Train 20]: 100%|██████████| 13/13 [00:10<00:00,  1.54it/s]
+[Train 20]: 100%|██████████| 13/13 [00:10<00:00,  1.28it/s]
+
+[Train 21]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 21]:   8%|▊         | 1/13 [00:00<00:11,  1.01it/s]
+[Train 21]:  15%|█▌        | 2/13 [00:01<00:10,  1.07it/s]
+[Train 21]:  23%|██▎       | 3/13 [00:02<00:08,  1.13it/s]
+[Train 21]:  31%|███       | 4/13 [00:03<00:07,  1.17it/s]
+[Train 21]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 21]:  46%|████▌     | 6/13 [00:05<00:05,  1.23it/s]
+[Train 21]:  54%|█████▍    | 7/13 [00:05<00:04,  1.24it/s]
+[Train 21]:  62%|██████▏   | 8/13 [00:06<00:04,  1.20it/s]
+[Train 21]:  69%|██████▉   | 9/13 [00:07<00:03,  1.19it/s]
+[Train 21]:  77%|███████▋  | 10/13 [00:08<00:02,  1.18it/s]
+[Train 21]:  85%|████████▍ | 11/13 [00:09<00:01,  1.20it/s]
+[Train 21]:  92%|█████████▏| 12/13 [00:10<00:00,  1.19it/s]
+[Train 21]: 100%|██████████| 13/13 [00:10<00:00,  1.45it/s]
+[Train 21]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 22]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 22]:   8%|▊         | 1/13 [00:00<00:11,  1.05it/s]
+[Train 22]:  15%|█▌        | 2/13 [00:01<00:09,  1.14it/s]
+[Train 22]:  23%|██▎       | 3/13 [00:02<00:08,  1.21it/s]
+[Train 22]:  31%|███       | 4/13 [00:03<00:08,  1.11it/s]
+[Train 22]:  38%|███▊      | 5/13 [00:04<00:07,  1.12it/s]
+[Train 22]:  46%|████▌     | 6/13 [00:05<00:06,  1.15it/s]
+[Train 22]:  54%|█████▍    | 7/13 [00:06<00:05,  1.14it/s]
+[Train 22]:  62%|██████▏   | 8/13 [00:06<00:04,  1.17it/s]
+[Train 22]:  69%|██████▉   | 9/13 [00:07<00:03,  1.21it/s]
+[Train 22]:  77%|███████▋  | 10/13 [00:08<00:02,  1.23it/s]
+[Train 22]:  85%|████████▍ | 11/13 [00:09<00:01,  1.25it/s]
+[Train 22]:  92%|█████████▏| 12/13 [00:10<00:00,  1.23it/s]
+[Train 22]: 100%|██████████| 13/13 [00:10<00:00,  1.46it/s]
+[Train 22]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 23]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 23]:   8%|▊         | 1/13 [00:00<00:10,  1.20it/s]
+[Train 23]:  15%|█▌        | 2/13 [00:01<00:09,  1.14it/s]
+[Train 23]:  23%|██▎       | 3/13 [00:02<00:08,  1.17it/s]
+[Train 23]:  31%|███       | 4/13 [00:03<00:07,  1.18it/s]
+[Train 23]:  38%|███▊      | 5/13 [00:04<00:06,  1.21it/s]
+[Train 23]:  46%|████▌     | 6/13 [00:05<00:05,  1.20it/s]
+[Train 23]:  54%|█████▍    | 7/13 [00:05<00:05,  1.17it/s]
+[Train 23]:  62%|██████▏   | 8/13 [00:06<00:04,  1.18it/s]
+[Train 23]:  69%|██████▉   | 9/13 [00:07<00:03,  1.21it/s]
+[Train 23]:  77%|███████▋  | 10/13 [00:08<00:02,  1.21it/s]
+[Train 23]:  85%|████████▍ | 11/13 [00:09<00:01,  1.23it/s]
+[Train 23]:  92%|█████████▏| 12/13 [00:10<00:00,  1.20it/s]
+[Train 23]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 23]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 24]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 24]:   8%|▊         | 1/13 [00:00<00:09,  1.27it/s]
+[Train 24]:  15%|█▌        | 2/13 [00:01<00:08,  1.31it/s]
+[Train 24]:  23%|██▎       | 3/13 [00:02<00:08,  1.24it/s]
+[Train 24]:  31%|███       | 4/13 [00:03<00:07,  1.23it/s]
+[Train 24]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 24]:  46%|████▌     | 6/13 [00:04<00:05,  1.22it/s]
+[Train 24]:  54%|█████▍    | 7/13 [00:05<00:05,  1.18it/s]
+[Train 24]:  62%|██████▏   | 8/13 [00:06<00:04,  1.19it/s]
+[Train 24]:  69%|██████▉   | 9/13 [00:07<00:03,  1.16it/s]
+[Train 24]:  77%|███████▋  | 10/13 [00:08<00:02,  1.18it/s]
+[Train 24]:  85%|████████▍ | 11/13 [00:09<00:01,  1.18it/s]
+[Train 24]:  92%|█████████▏| 12/13 [00:10<00:00,  1.15it/s]
+[Train 24]: 100%|██████████| 13/13 [00:10<00:00,  1.40it/s]
+[Train 24]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 25]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 25]:   8%|▊         | 1/13 [00:00<00:11,  1.01it/s]
+[Train 25]:  15%|█▌        | 2/13 [00:01<00:10,  1.04it/s]
+[Train 25]:  23%|██▎       | 3/13 [00:02<00:08,  1.17it/s]
+[Train 25]:  31%|███       | 4/13 [00:03<00:07,  1.21it/s]
+[Train 25]:  38%|███▊      | 5/13 [00:04<00:06,  1.18it/s]
+[Train 25]:  46%|████▌     | 6/13 [00:05<00:06,  1.16it/s]
+[Train 25]:  54%|█████▍    | 7/13 [00:06<00:05,  1.18it/s]
+[Train 25]:  62%|██████▏   | 8/13 [00:06<00:04,  1.22it/s]
+[Train 25]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 25]:  77%|███████▋  | 10/13 [00:08<00:02,  1.24it/s]
+[Train 25]:  85%|████████▍ | 11/13 [00:09<00:01,  1.22it/s]
+[Train 25]:  92%|█████████▏| 12/13 [00:10<00:00,  1.22it/s]
+[Train 25]: 100%|██████████| 13/13 [00:10<00:00,  1.44it/s]
+[Train 25]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 26]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 26]:   8%|▊         | 1/13 [00:00<00:10,  1.11it/s]
+[Train 26]:  15%|█▌        | 2/13 [00:01<00:09,  1.19it/s]
+[Train 26]:  23%|██▎       | 3/13 [00:02<00:08,  1.15it/s]
+[Train 26]:  31%|███       | 4/13 [00:03<00:07,  1.18it/s]
+[Train 26]:  38%|███▊      | 5/13 [00:04<00:06,  1.18it/s]
+[Train 26]:  46%|████▌     | 6/13 [00:05<00:05,  1.17it/s]
+[Train 26]:  54%|█████▍    | 7/13 [00:05<00:04,  1.21it/s]
+[Train 26]:  62%|██████▏   | 8/13 [00:06<00:04,  1.18it/s]
+[Train 26]:  69%|██████▉   | 9/13 [00:07<00:03,  1.21it/s]
+[Train 26]:  77%|███████▋  | 10/13 [00:08<00:02,  1.18it/s]
+[Train 26]:  85%|████████▍ | 11/13 [00:09<00:01,  1.20it/s]
+[Train 26]:  92%|█████████▏| 12/13 [00:10<00:00,  1.24it/s]
+[Train 26]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 26]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 27]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 27]:   8%|▊         | 1/13 [00:00<00:11,  1.06it/s]
+[Train 27]:  15%|█▌        | 2/13 [00:01<00:09,  1.11it/s]
+[Train 27]:  23%|██▎       | 3/13 [00:02<00:09,  1.08it/s]
+[Train 27]:  31%|███       | 4/13 [00:03<00:07,  1.17it/s]
+[Train 27]:  38%|███▊      | 5/13 [00:04<00:06,  1.21it/s]
+[Train 27]:  46%|████▌     | 6/13 [00:05<00:05,  1.24it/s]
+[Train 27]:  54%|█████▍    | 7/13 [00:05<00:04,  1.26it/s]
+[Train 27]:  62%|██████▏   | 8/13 [00:06<00:03,  1.30it/s]
+[Train 27]:  69%|██████▉   | 9/13 [00:07<00:03,  1.26it/s]
+[Train 27]:  77%|███████▋  | 10/13 [00:08<00:02,  1.15it/s]
+[Train 27]:  85%|████████▍ | 11/13 [00:09<00:01,  1.16it/s]
+[Train 27]:  92%|█████████▏| 12/13 [00:10<00:00,  1.19it/s]
+[Train 27]: 100%|██████████| 13/13 [00:10<00:00,  1.42it/s]
+[Train 27]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 28]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 28]:   8%|▊         | 1/13 [00:00<00:10,  1.13it/s]
+[Train 28]:  15%|█▌        | 2/13 [00:01<00:09,  1.14it/s]
+[Train 28]:  23%|██▎       | 3/13 [00:02<00:08,  1.13it/s]
+[Train 28]:  31%|███       | 4/13 [00:03<00:07,  1.17it/s]
+[Train 28]:  38%|███▊      | 5/13 [00:04<00:06,  1.26it/s]
+[Train 28]:  46%|████▌     | 6/13 [00:05<00:05,  1.22it/s]
+[Train 28]:  54%|█████▍    | 7/13 [00:05<00:05,  1.18it/s]
+[Train 28]:  62%|██████▏   | 8/13 [00:06<00:04,  1.19it/s]
+[Train 28]:  69%|██████▉   | 9/13 [00:07<00:03,  1.19it/s]
+[Train 28]:  77%|███████▋  | 10/13 [00:08<00:02,  1.22it/s]
+[Train 28]:  85%|████████▍ | 11/13 [00:09<00:01,  1.25it/s]
+[Train 28]:  92%|█████████▏| 12/13 [00:10<00:00,  1.21it/s]
+[Train 28]: 100%|██████████| 13/13 [00:10<00:00,  1.39it/s]
+[Train 28]: 100%|██████████| 13/13 [00:10<00:00,  1.24it/s]
+
+[Train 29]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 29]:   8%|▊         | 1/13 [00:00<00:10,  1.18it/s]
+[Train 29]:  15%|█▌        | 2/13 [00:01<00:09,  1.17it/s]
+[Train 29]:  23%|██▎       | 3/13 [00:02<00:08,  1.14it/s]
+[Train 29]:  31%|███       | 4/13 [00:03<00:08,  1.12it/s]
+[Train 29]:  38%|███▊      | 5/13 [00:04<00:06,  1.18it/s]
+[Train 29]:  46%|████▌     | 6/13 [00:05<00:05,  1.18it/s]
+[Train 29]:  54%|█████▍    | 7/13 [00:05<00:04,  1.20it/s]
+[Train 29]:  62%|██████▏   | 8/13 [00:06<00:04,  1.23it/s]
+[Train 29]:  69%|██████▉   | 9/13 [00:07<00:03,  1.15it/s]
+[Train 29]:  77%|███████▋  | 10/13 [00:08<00:02,  1.13it/s]
+[Train 29]:  85%|████████▍ | 11/13 [00:09<00:01,  1.16it/s]
+[Train 29]:  92%|█████████▏| 12/13 [00:10<00:00,  1.20it/s]
+[Train 29]: 100%|██████████| 13/13 [00:10<00:00,  1.41it/s]
+[Train 29]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 30]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 30]:   8%|▊         | 1/13 [00:00<00:10,  1.15it/s]
+[Train 30]:  15%|█▌        | 2/13 [00:01<00:09,  1.15it/s]
+[Train 30]:  23%|██▎       | 3/13 [00:02<00:09,  1.07it/s]
+[Train 30]:  31%|███       | 4/13 [00:03<00:07,  1.13it/s]
+[Train 30]:  38%|███▊      | 5/13 [00:04<00:06,  1.16it/s]
+[Train 30]:  46%|████▌     | 6/13 [00:05<00:05,  1.21it/s]
+[Train 30]:  54%|█████▍    | 7/13 [00:05<00:04,  1.23it/s]
+[Train 30]:  62%|██████▏   | 8/13 [00:06<00:04,  1.24it/s]
+[Train 30]:  69%|██████▉   | 9/13 [00:07<00:03,  1.21it/s]
+[Train 30]:  77%|███████▋  | 10/13 [00:08<00:02,  1.15it/s]
+[Train 30]:  85%|████████▍ | 11/13 [00:09<00:01,  1.17it/s]
+[Train 30]:  92%|█████████▏| 12/13 [00:10<00:00,  1.15it/s]
+[Train 30]: 100%|██████████| 13/13 [00:10<00:00,  1.37it/s]
+[Train 30]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 31]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 31]:   8%|▊         | 1/13 [00:00<00:11,  1.03it/s]
+[Train 31]:  15%|█▌        | 2/13 [00:01<00:09,  1.17it/s]
+[Train 31]:  23%|██▎       | 3/13 [00:02<00:08,  1.20it/s]
+[Train 31]:  31%|███       | 4/13 [00:03<00:07,  1.15it/s]
+[Train 31]:  38%|███▊      | 5/13 [00:04<00:06,  1.17it/s]
+[Train 31]:  46%|████▌     | 6/13 [00:05<00:06,  1.15it/s]
+[Train 31]:  54%|█████▍    | 7/13 [00:06<00:05,  1.18it/s]
+[Train 31]:  62%|██████▏   | 8/13 [00:06<00:04,  1.22it/s]
+[Train 31]:  69%|██████▉   | 9/13 [00:07<00:03,  1.23it/s]
+[Train 31]:  77%|███████▋  | 10/13 [00:08<00:02,  1.25it/s]
+[Train 31]:  85%|████████▍ | 11/13 [00:09<00:01,  1.20it/s]
+[Train 31]:  92%|█████████▏| 12/13 [00:10<00:00,  1.15it/s]
+[Train 31]: 100%|██████████| 13/13 [00:10<00:00,  1.40it/s]
+[Train 31]: 100%|██████████| 13/13 [00:10<00:00,  1.23it/s]
+
+[Train 32]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 32]:   8%|▊         | 1/13 [00:00<00:10,  1.17it/s]
+[Train 32]:  15%|█▌        | 2/13 [00:01<00:09,  1.13it/s]
+[Train 32]:  23%|██▎       | 3/13 [00:02<00:08,  1.17it/s]
+[Train 32]:  31%|███       | 4/13 [00:03<00:07,  1.21it/s]
+[Train 32]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 32]:  46%|████▌     | 6/13 [00:04<00:05,  1.26it/s]
+[Train 32]:  54%|█████▍    | 7/13 [00:05<00:04,  1.27it/s]
+[Train 32]:  62%|██████▏   | 8/13 [00:06<00:04,  1.18it/s]
+[Train 32]:  69%|██████▉   | 9/13 [00:07<00:03,  1.16it/s]
+[Train 32]:  77%|███████▋  | 10/13 [00:08<00:02,  1.20it/s]
+[Train 32]:  85%|████████▍ | 11/13 [00:09<00:01,  1.18it/s]
+[Train 32]:  92%|█████████▏| 12/13 [00:10<00:00,  1.20it/s]
+[Train 32]: 100%|██████████| 13/13 [00:10<00:00,  1.44it/s]
+[Train 32]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 33]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 33]:   8%|▊         | 1/13 [00:00<00:09,  1.28it/s]
+[Train 33]:  15%|█▌        | 2/13 [00:01<00:09,  1.20it/s]
+[Train 33]:  23%|██▎       | 3/13 [00:02<00:08,  1.16it/s]
+[Train 33]:  31%|███       | 4/13 [00:03<00:07,  1.16it/s]
+[Train 33]:  38%|███▊      | 5/13 [00:04<00:06,  1.19it/s]
+[Train 33]:  46%|████▌     | 6/13 [00:05<00:06,  1.06it/s]
+[Train 33]:  54%|█████▍    | 7/13 [00:06<00:05,  1.11it/s]
+[Train 33]:  62%|██████▏   | 8/13 [00:06<00:04,  1.14it/s]
+[Train 33]:  69%|██████▉   | 9/13 [00:07<00:03,  1.12it/s]
+[Train 33]:  77%|███████▋  | 10/13 [00:08<00:02,  1.16it/s]
+[Train 33]:  85%|████████▍ | 11/13 [00:09<00:01,  1.19it/s]
+[Train 33]:  92%|█████████▏| 12/13 [00:10<00:00,  1.20it/s]
+[Train 33]: 100%|██████████| 13/13 [00:10<00:00,  1.45it/s]
+[Train 33]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 34]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 34]:   8%|▊         | 1/13 [00:00<00:09,  1.28it/s]
+[Train 34]:  15%|█▌        | 2/13 [00:01<00:09,  1.22it/s]
+[Train 34]:  23%|██▎       | 3/13 [00:02<00:08,  1.22it/s]
+[Train 34]:  31%|███       | 4/13 [00:03<00:07,  1.20it/s]
+[Train 34]:  38%|███▊      | 5/13 [00:04<00:06,  1.17it/s]
+[Train 34]:  46%|████▌     | 6/13 [00:04<00:05,  1.20it/s]
+[Train 34]:  54%|█████▍    | 7/13 [00:05<00:04,  1.21it/s]
+[Train 34]:  62%|██████▏   | 8/13 [00:06<00:04,  1.17it/s]
+[Train 34]:  69%|██████▉   | 9/13 [00:07<00:03,  1.15it/s]
+[Train 34]:  77%|███████▋  | 10/13 [00:08<00:02,  1.14it/s]
+[Train 34]:  85%|████████▍ | 11/13 [00:09<00:01,  1.16it/s]
+[Train 34]:  92%|█████████▏| 12/13 [00:10<00:00,  1.22it/s]
+[Train 34]: 100%|██████████| 13/13 [00:10<00:00,  1.46it/s]
+[Train 34]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 35]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 35]:   8%|▊         | 1/13 [00:00<00:10,  1.16it/s]
+[Train 35]:  15%|█▌        | 2/13 [00:01<00:09,  1.17it/s]
+[Train 35]:  23%|██▎       | 3/13 [00:02<00:08,  1.23it/s]
+[Train 35]:  31%|███       | 4/13 [00:03<00:07,  1.24it/s]
+[Train 35]:  38%|███▊      | 5/13 [00:04<00:06,  1.22it/s]
+[Train 35]:  46%|████▌     | 6/13 [00:04<00:05,  1.19it/s]
+[Train 35]:  54%|█████▍    | 7/13 [00:05<00:04,  1.23it/s]
+[Train 35]:  62%|██████▏   | 8/13 [00:06<00:04,  1.24it/s]
+[Train 35]:  69%|██████▉   | 9/13 [00:07<00:03,  1.16it/s]
+[Train 35]:  77%|███████▋  | 10/13 [00:08<00:02,  1.19it/s]
+[Train 35]:  85%|████████▍ | 11/13 [00:09<00:01,  1.22it/s]
+[Train 35]:  92%|█████████▏| 12/13 [00:10<00:00,  1.18it/s]
+[Train 35]: 100%|██████████| 13/13 [00:10<00:00,  1.41it/s]
+[Train 35]: 100%|██████████| 13/13 [00:10<00:00,  1.25it/s]
+
+[Train 36]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 36]:   8%|▊         | 1/13 [00:00<00:11,  1.07it/s]
+[Train 36]:  15%|█▌        | 2/13 [00:01<00:10,  1.08it/s]
+[Train 36]:  23%|██▎       | 3/13 [00:02<00:08,  1.18it/s]
+[Train 36]:  31%|███       | 4/13 [00:03<00:07,  1.13it/s]
+[Train 36]:  38%|███▊      | 5/13 [00:04<00:06,  1.17it/s]
+[Train 36]:  46%|████▌     | 6/13 [00:05<00:05,  1.18it/s]
+[Train 36]:  54%|█████▍    | 7/13 [00:06<00:05,  1.18it/s]
+[Train 36]:  62%|██████▏   | 8/13 [00:06<00:04,  1.22it/s]
+[Train 36]:  69%|██████▉   | 9/13 [00:07<00:03,  1.20it/s]
+[Train 36]:  77%|███████▋  | 10/13 [00:08<00:02,  1.22it/s]
+[Train 36]:  85%|████████▍ | 11/13 [00:09<00:01,  1.16it/s]
+[Train 36]:  92%|█████████▏| 12/13 [00:10<00:00,  1.17it/s]
+[Train 36]: 100%|██████████| 13/13 [00:10<00:00,  1.39it/s]
+[Train 36]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[Train 37]:   0%|          | 0/13 [00:00<?, ?it/s]
+[Train 37]:   8%|▊         | 1/13 [00:00<00:11,  1.05it/s]
+[Train 37]:  15%|█▌        | 2/13 [00:01<00:09,  1.15it/s]
+[Train 37]:  23%|██▎       | 3/13 [00:02<00:09,  1.03it/s]
+[Train 37]:  31%|███       | 4/13 [00:03<00:08,  1.09it/s]
+[Train 37]:  38%|███▊      | 5/13 [00:04<00:07,  1.10it/s]
+[Train 37]:  46%|████▌     | 6/13 [00:05<00:05,  1.17it/s]
+[Train 37]:  54%|█████▍    | 7/13 [00:06<00:05,  1.16it/s]
+[Train 37]:  62%|██████▏   | 8/13 [00:07<00:04,  1.18it/s]
+[Train 37]:  69%|██████▉   | 9/13 [00:07<00:03,  1.22it/s]
+[Train 37]:  77%|███████▋  | 10/13 [00:08<00:02,  1.23it/s]
+[Train 37]:  85%|████████▍ | 11/13 [00:09<00:01,  1.28it/s]
+[Train 37]:  92%|█████████▏| 12/13 [00:10<00:00,  1.24it/s]
+[Train 37]: 100%|██████████| 13/13 [00:10<00:00,  1.43it/s]
+[Train 37]: 100%|██████████| 13/13 [00:10<00:00,  1.22it/s]
+
+[14:20:18] INFO - [완료] --> Step5 Student Distillation Train (소요시간: 741.66초)
+[14:20:18] INFO - 
+[실행 시작] --> Step6 Evaluate Model
+[14:20:18] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/model/eval.py --mark_version mark4.8
+[14:29:53] INFO - [STDOUT]
+[INFO] test 전량 후보: 100개. 유효성 검사 후 평가 시작.
+[INFO] 유효 test 샘플: 100개
+Global seed set to 42
+[INFO] Confusion matrix 저장 완료.
+[others FPR] 실제 others인데 타겟 클래스로 오분류된 비율: 0.4000
+
+==============================
+      성능 평가 결과 (mark4.8)
+==============================
+  - Accuracy: 0.6800
+  - ROC AUC: 0.7776
+
+클래스별 성능:
+  - dog_bark | P:0.6552 R:0.7600 F1:0.7037
+  - others | P:0.7143 R:0.6000 F1:0.6522
+==============================
+
+[INFO] 성능 요약 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/performance_summary_mark4.8.csv
+[INFO] 상세 예측 결과 CSV 저장: /mnt/c/workspace/journal/codes/mark4_refactored/plots/prediction_details_mark4.8.csv
+
+[14:29:53] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/vild/vild_parser_common.py:67: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+[INFO] Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  8.87it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00,  8.84it/s]
+
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+Batches: 100%|██████████| 1/1 [00:00<00:00, 25.00it/s]
+/mnt/c/workspace/journal/codes/mark4_refactored/shared_vild/checkpoint_utils.py:82: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(path, map_location=map_location)
+
+[14:29:53] INFO - [완료] --> Step6 Evaluate Model (소요시간: 574.89초)
+[14:29:53] INFO - 
+[실행 시작] --> Step7 Plot Results
+[14:29:53] INFO - [CMD] /mnt/c/workspace/journal/codes/.venv/bin/python /mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/plot_audio.py --mark_version mark4.8
+[14:31:25] INFO - [STDOUT]
+Global seed set to 42
+[완료] Waveform plot 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_waveform_mark4.8.png
+[완료] Mel spectrogram plot 저장됨: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_mel_mark4.8.png
+[시도 완료] 저장된 시각화 결과 -> Wave: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_waveform_mark4.8.png, Mel: /mnt/c/workspace/journal/codes/mark4_refactored/plots/dog_bark_test_001_mel_mark4.8.png
+
+[14:31:25] INFO - [STDERR]
+/mnt/c/workspace/journal/codes/mark4_refactored/preprocessing/plot_audio.py:88: UserWarning: torchaudio._backend.set_audio_backend has been deprecated. With dispatcher enabled, this function is no-op. You can remove the function call.
+  torchaudio.set_audio_backend("soundfile")
+
+[14:31:25] INFO - [완료] --> Step7 Plot Results (소요시간: 92.53초)
+[14:31:25] INFO - ==================================================
+[14:31:25] INFO - [종료] 전체 파이프라인 완료. 로그 파일: /mnt/c/workspace/journal/codes/mark4_refactored/logFiles/run_pipeline_distillation_mark4.8_20260712_135420.txt
+[14:31:25] INFO - ==================================================

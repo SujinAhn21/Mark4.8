@@ -1,0 +1,29 @@
+주요 변경 사항
+
+1. model/teacher_train.py
+- CSV를 읽은 뒤 _in_split(path,"train"/"val")로 경로 기반 분리.
+- train_loader는 학습(옵티마이저 업데이트), val_loader는 검증(손실 계산 및 EarlyStopping/베스트 저장 판단)만 수행.
+- Mark2.x 시리즈의 random_split 완전 제거. 
+=> 결론: train만 학습, val만 검증.
+
+2. extraction/extract_hard_labels.py
+- _in_split(path, {"train","val"})로 필터링하여 test는 명시적으로 제외.
+- 생성된 hard_labels에는 train+val만 포함.
+=> 결론: 라벨 생성에 test 불포함.
+
+3. extraction/extract_soft_labels.py
+- _in_split(path, {"train","val"})로 필터링하여 test 제외.
+- 생성된 soft_labels에도 train+val만 포함.
+=> 결론: 라벨 생성에 test 불포함.
+
+4. model/student_train_distillation.py
+- load_labels()로 불러온 뒤 경로 기반으로 train_data=/data/train/, val_data=/data/val/로 분리.
+- 학습은 train_loader에서만, 검증/얼리스타핑/LR 스케줄 판단은 val_loader에서만.
+- train_test_split 등 임의 분할 없음.
+=> 결론: train=학습, val=검증으로 엄격 분리.
+
+5. model/eval.py
+- CSV에서 경로에 “/data/test/”가 포함된 항목만 수집.
+- 유효성 검사 후 test 전량으로 평가, 컨퓨전 매트릭스/지표 모두 test만 기준.
+- per_class_max 샘플링 제거됨.
+=> 결론: test만 평가.

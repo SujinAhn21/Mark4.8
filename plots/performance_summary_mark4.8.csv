@@ -1,0 +1,12 @@
+# Performance Summary for mark4.8
+
+Metric,Score
+Accuracy,0.73
+ROC AUC,0.7748
+Others FPR,0.2
+
+# Class-wise Metrics
+
+Class,Precision,Recall,F1-Score
+dog_bark,0.7674418604651163,0.66,0.7096774193548386
+others,0.7017543859649122,0.8,0.7476635514018691

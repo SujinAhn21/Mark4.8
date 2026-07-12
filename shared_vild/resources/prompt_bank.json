@@ -1,0 +1,20 @@
+{
+  "prompt_templates": [
+    "a sound of {label} in the room",
+    "the audio of {label}",
+    "an indoor sound that resembles {label}",
+    "a recording of {label}"
+  ],
+  "class_synonyms": {
+    "heavy_impact": ["heavy impact", "strong thud", "impact on floor", "heavy footstep"],
+    "dragging": ["dragging", "scraping drag", "object dragging on floor", "furniture dragging"],
+    "construction": ["construction", "construction work", "renovation noise", "building noise"],
+    "machine_noise": ["machine noise", "mechanical humming", "appliance machine sound", "motor noise"],
+    "media_talking": ["media talking", "tv speech", "speaker talking audio", "voice from speaker"],
+    "water_toilet": ["toilet water", "toilet flush", "bathroom flush sound", "toilet flushing"],
+    "water_shower": ["shower water", "shower running", "bathroom shower sound", "shower noise"],
+    "dog_bark": ["dog bark", "barking dog", "canine bark", "dog noise"],
+    "others": ["other sound", "background noise", "non target sound", "ambient noise"],
+    "dummy_label": ["other sound", "background noise", "non target sound", "ambient noise"]
+  }
+}
