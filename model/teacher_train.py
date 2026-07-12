@@ -109,8 +109,11 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
 
     teacher_encoder = SimpleAudioEncoder(config).to(device)
     teacher_classifier = ViLDTextHead(config).to(device)
+    # [수정 2026-07-12 / 가설6] weight_decay 추가(기존 0). teacher가 val best를 epoch 5에
+    # 찍고 곧장 과적합(train down/val up)하던 실측에 대한 L2 정규화 처방.
     optimizer = optim.Adam(list(teacher_encoder.parameters()) + list(teacher_classifier.parameters()),
-                           lr=config.learning_rate)
+                           lr=config.learning_rate,
+                           weight_decay=getattr(config, "weight_decay", 0.0))
     loss_fn = ViLDLosses(config)
 
     print(f"[INFO] Teacher training started for {mark_version} on {device}")

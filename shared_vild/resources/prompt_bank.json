@@ -14,7 +14,7 @@
     "water_toilet": ["toilet water", "toilet flush", "bathroom flush sound", "toilet flushing"],
     "water_shower": ["shower water", "shower running", "bathroom shower sound", "shower noise"],
     "dog_bark": ["dog bark", "barking dog", "canine bark", "dog noise"],
-    "others": ["other sound", "background noise", "non target sound", "ambient noise"],
+    "others": ["traffic noise", "people talking", "household appliance sound"],
     "dummy_label": ["other sound", "background noise", "non target sound", "ambient noise"]
   }
 }
