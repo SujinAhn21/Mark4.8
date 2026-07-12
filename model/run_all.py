@@ -52,20 +52,30 @@ def timed_step(func):
 
 # ===== 서브프로세스 실행 함수 =====
 def run_subprocess(command_list):
+    """하위 스크립트를 실행하되 출력을 실시간으로 흘려보낸다.
+    - stdout(print 기반 epoch/INFO 로그): 한 줄씩 실시간으로 터미널+로그파일 양쪽에 출력.
+    - stderr(tqdm 배치 진행바): 파이프로 잡지 않고 터미널로 직접 보내 진행바가 실시간으로 렌더링됨.
+    - PYTHONUNBUFFERED=1: 하위 파이썬의 print가 버퍼에 안 쌓이고 즉시 flush되게 함.
+    (기존엔 capture_output=True로 출력을 다 잡아뒀다가 단계 종료 후에야 한꺼번에 찍어서,
+     학습이 도는 동안 터미널에 아무것도 안 보이던 문제를 해결.)"""
     try:
         logging.info(f"[CMD] {' '.join(command_list)}")
-        result = subprocess.run(
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+        process = subprocess.Popen(
             command_list,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=None,          # tqdm(stderr)은 터미널로 직접 -> 실시간 진행바
             text=True,
             encoding='utf-8',
-            errors='replace'
+            errors='replace',
+            bufsize=1,            # 라인 버퍼링
+            env=env,
         )
-        if result.stdout:
-            logging.info("[STDOUT]\n" + result.stdout)
-        if result.stderr:
-            logging.info("[STDERR]\n" + result.stderr)
-        return result.returncode
+        for line in process.stdout:
+            logging.info(line.rstrip("\n"))   # 터미널(StreamHandler)+로그파일(FileHandler) 실시간
+        process.wait()
+        return process.returncode
     except Exception as e:
         logging.error(f"[ERROR] Subprocess 실행 중 예외 발생: {e}")
         return 1
