@@ -106,8 +106,11 @@ def _apply_others_calibration(prob_vec, class_names, config):
     margin = top_conf - second_conf
 
     entropy = float(-(calibrated * np.log(np.clip(calibrated, 1e-8, 1.0))).sum() / np.log(len(class_names)))
+    # [확정 2026-07-12] use_others_calibration=False면 override 자체를 건너뛴다(raw 예측 유지).
+    # mark4.8(2-class)에서 이 override가 dog_bark recall만 깎아(62%->42%) 비활성이 맞다고 실측 확정.
     force_others = (
-        top_idx != others_idx
+        getattr(config, "use_others_calibration", True)
+        and top_idx != others_idx
         and (
             top_conf < config.others_confidence_threshold
             or margin < config.others_margin_threshold

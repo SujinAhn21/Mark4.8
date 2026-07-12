@@ -91,6 +91,17 @@ class AudioViLDConfig:
         # 고른 것이라 val set 기준 재검증이 이상적이나, 급한 실전 디버깅 상황이라 우선 반영.
         self.others_confidence_threshold = 0.55
         self.others_margin_threshold = 0.08
+        # [확정 2026-07-12] others-calibration override 완전 비활성(False).
+        # 원인: 이 override는 raw 예측이 others가 아닐 때만(=dog_bark일 때만) 작동해서 조건에 걸리면
+        # others로 강등시킨다 -> 구조적으로 dog_bark 예측을 줄이기만 할 뿐 늘리지는 못한다.
+        # mark4.8(2-class specialist) 실측(재분할 재학습 후 test 100개)에서 raw dog_bark recall 62%가
+        # override를 거치면 42%로 반토막났다(정답 dog_bark 10건을 죽이고 오답 11건을 살려 정확도는 +1%p뿐).
+        # 2-class에선 margin=2*conf-1 이라 conf/margin/entropy 세 조건이 전부 conf≈0.55 근처에서 겹쳐,
+        # 그 구간(0.51~0.55)에 정답/오답이 5:5로 섞여 있어 '완화'의 스위트스팟이 없었다(부분완화가 오히려
+        # 더 나빴음). override off 시뮬레이션 결과: dog_bark recall 0.42->0.62, 정확도 0.66->0.65(-1%p),
+        # macro F1 0.639->0.650(오히려 개선). others-calibration은 원래 9-class generalist(mark5)용
+        # 반려 로직이라 2-class specialist에는 부적합. (eval 시점 로직이라 재학습 불필요.)
+        self.use_others_calibration = False
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
         # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).
