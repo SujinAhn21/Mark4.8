@@ -82,6 +82,57 @@ class SimpleAudioEncoder(nn.Module):
         return (1, c, h, w)
 
 
+class TeacherAudioEncoder(nn.Module):
+    """
+    [추가 2026-07-13 / teacher 강화] teacher 전용 대형 인코더.
+
+    배경: 기존 teacher는 student와 완전히 같은 SimpleAudioEncoder(약 14.3만 파라미터)를 써서
+    KD인데도 teacher의 용량 우위가 전혀 없었음(teacher val loss가 가장 약한 고리였던 구조적 원인).
+    teacher는 엣지에 배포되지 않고 오프라인 soft label 생성에만 쓰이므로 크기 제약이 없다.
+
+    구조: conv 4블록(32->64->128->256) + 같은 head 구성. 약 49만 파라미터(student의 약 3.4배).
+    입력/출력 인터페이스는 SimpleAudioEncoder와 동일([B, C, 64, 101] -> [B, embedding_dim])이라
+    ViLDTextHead·Feature KD(384차원)와 그대로 호환된다. 입력 64x101 -> 4회 MaxPool 후 4x6.
+    주의: 기존 teacher .pth와 구조가 안 맞으므로 teacher부터 전체 재학습 필요.
+    """
+
+    def __init__(self, config):
+        super().__init__()
+        in_channels = getattr(config, "num_input_channels", 1)
+
+        def block(cin, cout):
+            return nn.Sequential(
+                nn.Conv2d(cin, cout, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(cout),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+            )
+
+        self.model = nn.Sequential(
+            block(in_channels, 32),
+            block(32, 64),
+            block(64, 128),
+            block(128, 256),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+            nn.LayerNorm(256),
+            nn.Dropout(0.3),
+            nn.Linear(256, config.embedding_dim),
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+def build_teacher_encoder(config):
+    """teacher 인코더 선택 지점(단일 스위치). teacher_train.py와 extract_soft_labels.py가
+    반드시 같은 함수를 써야 체크포인트 구조가 일치한다.
+    config.use_large_teacher_encoder=False(또는 없음)면 기존 동작(SimpleAudioEncoder) 그대로."""
+    if getattr(config, "use_large_teacher_encoder", False):
+        return TeacherAudioEncoder(config)
+    return SimpleAudioEncoder(config)
+
+
 class ViLDTextHead(nn.Module):
     """
     region embedding과 텍스트 임베딩 간 cosine similarity 로짓을 계산하는 헤드 모듈

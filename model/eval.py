@@ -188,9 +188,13 @@ def _save_visual_explanation(path, segments, segment_probs, segment_weights, cla
     fig.savefig(out_path)
     plt.close(fig)
 
-def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
+def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1", split="test"):
     set_seed(seed_value)
     config = AudioViLDConfig(mark_version=mark_version)
+    # [추가 2026-07-13] test가 아닌 split(예: val)을 평가할 때는 결과 파일명에 split을 붙여
+    # 기존 test 결과물(confusion matrix, summary CSV 등)을 덮어쓰지 않는다.
+    # 용도: target_decision_threshold 같은 운영점을 test가 아닌 val 기준으로 재검증하기 위함.
+    out_tag = mark_version if split == "test" else f"{mark_version}_{split}"
     parser = AudioParser(config)
     device = config.device
 
@@ -309,8 +313,8 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
 
     cm = confusion_matrix(y_true, y_pred, labels=list(range(ncls)))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=cls)
-    disp.plot(cmap=plt.cm.Blues); plt.title(f"Confusion Matrix ({mark_version})")
-    plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f"confusion_matrix_{mark_version}.png")); plt.close()
+    disp.plot(cmap=plt.cm.Blues); plt.title(f"Confusion Matrix ({out_tag})")
+    plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f"confusion_matrix_{out_tag}.png")); plt.close()
     print("[INFO] Confusion matrix 저장 완료.")
 
     acc = accuracy_score(y_true, y_pred)
@@ -329,7 +333,7 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
     print(f"[others FPR] 실제 others인데 타겟 클래스로 오분류된 비율: {others_fpr:.4f}")
 
     print("\n" + "="*30)
-    print(f"      성능 평가 결과 ({mark_version})")
+    print(f"      성능 평가 결과 ({out_tag})")
     print("="*30)
     print(f"  - Accuracy: {acc:.4f}")
     if isinstance(rocA, float): print(f"  - ROC AUC: {rocA:.4f}")
@@ -343,8 +347,8 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
     df.loc['Overall','Accuracy']=acc; df.loc['Overall','ROC AUC']=rocA if isinstance(rocA,float) else None
     plt.figure(figsize=(8,4))
     sns.heatmap(df, annot=True, fmt=".4f", cmap="viridis", cbar=False, linewidths=.5)
-    plt.title(f'Performance Metrics ({mark_version})'); plt.xticks(fontsize=12); plt.yticks(fontsize=12, rotation=0)
-    plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f'performance_metrics_table_{mark_version}.png')); plt.close()
+    plt.title(f'Performance Metrics ({out_tag})'); plt.xticks(fontsize=12); plt.yticks(fontsize=12, rotation=0)
+    plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f'performance_metrics_table_{out_tag}.png')); plt.close()
 
     plt.figure(figsize=(7,6))
     if ncls==2:
@@ -354,19 +358,19 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
             fpr,tpr,_ = roc_curve(y_true==i, y_prob[:,i]); A = auc(fpr,tpr)
             plt.plot(fpr,tpr, label=f'{cls[i]} AUC={A:.4f}')
     plt.plot([0,1],[0,1],'k--'); plt.xlim([0,1]); plt.ylim([0,1.05])
-    plt.xlabel('FPR'); plt.ylabel('TPR'); plt.title(f'ROC ({mark_version})'); plt.legend(loc="lower right")
-    plt.grid(True); plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f'roc_curve_{mark_version}.png')); plt.close()
+    plt.xlabel('FPR'); plt.ylabel('TPR'); plt.title(f'ROC ({out_tag})'); plt.legend(loc="lower right")
+    plt.grid(True); plt.tight_layout(); plt.savefig(os.path.join(plot_dir, f'roc_curve_{out_tag}.png')); plt.close()
 
-    csv_path = os.path.join(plot_dir, f'performance_summary_{mark_version}.csv')
+    csv_path = os.path.join(plot_dir, f'performance_summary_{out_tag}.csv')
     with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-        f.write(f"# Performance Summary for {mark_version}\n\n")
+        f.write(f"# Performance Summary for {out_tag}\n\n")
         pd.DataFrame({'Metric':['Accuracy','ROC AUC' if ncls==2 else 'ROC AUC (Macro)', 'Others FPR'],
                       'Score':[acc, rocA if isinstance(rocA,float) else 'N/A', others_fpr]}).to_csv(f, index=False)
         f.write("\n# Class-wise Metrics\n\n")
         pd.DataFrame({'Class':cls,'Precision':pre,'Recall':rec,'F1-Score':f1}).to_csv(f, index=False)
     print(f"[INFO] 성능 요약 CSV 저장: {csv_path}")
 
-    pred_results = os.path.join(plot_dir, f'prediction_details_{mark_version}.csv')
+    pred_results = os.path.join(plot_dir, f'prediction_details_{out_tag}.csv')
     with open(pred_results, 'w', newline='', encoding='utf-8') as f:
         w = csv.writer(f)
         w.writerow([
@@ -390,30 +394,34 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--mark_version', type=str, required=True)
+    # [추가 2026-07-13] 평가 split 선택. 기본은 test(기존 동작 그대로).
+    # val은 target_decision_threshold 같은 운영점을 test가 아닌 데이터로 재검증할 때 쓴다.
+    # split이 test가 아니면 결과 파일명에 _{split}이 붙어 test 결과를 덮지 않는다.
+    parser.add_argument('--split', type=str, default='test', choices=['test', 'val'])
     args = parser.parse_args()
 
     config = AudioViLDConfig(mark_version=args.mark_version)
     csv_path = _find_dataset_index(args.mark_version)
     pre_parser = AudioParser(config)
 
-    # test 전량 사용, 샘플링 제거
+    # 지정 split 전량 사용, 샘플링 제거
     data = []
     with open(csv_path, newline='', encoding='utf-8') as f:
         for row in csv.DictReader(f):
             p, l = row['path'], row['label']
-            if l in config.classes and ("/data/test/" in p.replace("\\","/")):
+            if l in config.classes and (f"/data/{args.split}/" in p.replace("\\","/")):
                 data.append((p, l))
 
-    print(f"[INFO] test 전량 후보: {len(data)}개. 유효성 검사 후 평가 시작.")
+    print(f"[INFO] {args.split} 전량 후보: {len(data)}개. 유효성 검사 후 평가 시작.")
     valid = []
     for path, label in data:
         segs = pre_parser.load_and_segment(path)
         if segs: valid.append((path, label))
         else: print(f"[WARN] 무효 파일 제외: {os.path.basename(path)}")
 
-    print(f"[INFO] 유효 test 샘플: {len(valid)}개")
+    print(f"[INFO] 유효 {args.split} 샘플: {len(valid)}개")
     if not valid:
-        print("[ERROR] 평가할 유효 test 샘플이 없습니다.")
+        print(f"[ERROR] 평가할 유효 {args.split} 샘플이 없습니다.")
     else:
-        evaluate(valid, seed_value=42, mark_version=args.mark_version)
+        evaluate(valid, seed_value=42, mark_version=args.mark_version, split=args.split)
     

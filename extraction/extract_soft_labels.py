@@ -17,7 +17,7 @@ for p in (PROJECT_ROOT, UTILS_DIR, VILD_DIR, MODEL_DIR):
     if p not in sys.path: sys.path.append(p)
 
 from vild_config import AudioViLDConfig
-from vild_model import SimpleAudioEncoder, ViLDTextHead
+from vild_model import SimpleAudioEncoder, ViLDTextHead, build_teacher_encoder
 from vild_parser_teacher import AudioParser
 SHARED_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "shared_vild"))
 if SHARED_DIR not in sys.path:
@@ -31,7 +31,9 @@ def _in_split(path: str, allowed={"train","val"}) -> bool:
 class TeacherPredictor:
     def __init__(self, config, device):
         self.config, self.device = config, device
-        self.encoder = SimpleAudioEncoder(config).to(device)
+        # [수정 2026-07-13 / teacher 강화] teacher_train.py와 같은 팩토리로 인코더를 만들어야
+        # best_teacher_encoder 체크포인트 구조와 일치한다(대형 teacher 인코더 도입에 따른 변경).
+        self.encoder = build_teacher_encoder(config).to(device)
         self.classifier = ViLDTextHead(config).to(device)
 
         enc_candidates = [
