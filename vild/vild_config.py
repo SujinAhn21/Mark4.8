@@ -102,6 +102,15 @@ class AudioViLDConfig:
         # macro F1 0.639->0.650(오히려 개선). others-calibration은 원래 9-class generalist(mark5)용
         # 반려 로직이라 2-class specialist에는 부적합. (eval 시점 로직이라 재학습 불필요.)
         self.use_others_calibration = False
+        # [추가 2026-07-13] 2-class 전용 최종 결정 threshold. 기존에는 argmax(=암묵적 0.5)였음.
+        # 가설 1·2·3·4·6 적용 재학습(커밋 63428a2) 결과 모델이 초보수적으로 변해(dog precision
+        # 1.0, Others FPR 0.0) 놓친 dog 19건 중 11건이 Prob 0.4~0.5 구간에 몰려 있었음.
+        # ROC AUC 0.9192로 분리력이 생긴 상태라 운영점 선택이 가능해짐: threshold를 0.40으로
+        # 낮추면 dog recall 0.62->0.84, accuracy 0.81->0.83, Others FPR 0.00->0.18 (test 100개
+        # 시뮬레이션). 주의: 이 값은 test set으로 고른 것이라 val set 기준 재검증이 이상적임.
+        # 또한 mark4.8 학습 결과 기준이므로 다른 4.x 버전은 각자 재튜닝 필요.
+        # None이면 기존 argmax 동작. 2-class가 아니면 무시됨.
+        self.target_decision_threshold = 0.40
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
         # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).

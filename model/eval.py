@@ -96,6 +96,22 @@ def _aggregate_segment_probs(segment_probs, saliency_scores, config):
     return aggregated, weights
 
 
+def _decide_with_threshold(prob_vec, class_names, config):
+    """
+    [추가 2026-07-13] 최종 예측 결정. 2-class(타겟 vs others)에서는 argmax(=암묵적 0.5) 대신
+    config.target_decision_threshold를 쓴다: Prob(타겟) >= threshold면 타겟, 아니면 others.
+    근거: 가설 1·2·3·4·6 재학습 후 모델이 초보수적(dog precision 1.0/FPR 0.0)이 되어 놓친
+    dog 19건 중 11건이 0.4~0.5 구간에 몰림 -> threshold 0.40으로 recall 0.62->0.84 회복
+    (상세는 vild_config.py 주석). threshold가 None이거나 2-class가 아니면 기존 argmax.
+    """
+    thr = getattr(config, "target_decision_threshold", None)
+    if thr is not None and len(class_names) == 2 and "others" in class_names:
+        others_idx = class_names.index("others")
+        target_idx = 1 - others_idx
+        return target_idx if float(prob_vec[target_idx]) >= thr else others_idx
+    return int(np.argmax(prob_vec))
+
+
 def _apply_others_calibration(prob_vec, class_names, config):
     calibrated = prob_vec.copy()
     others_idx = class_names.index("others")
@@ -257,8 +273,12 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1"):
             continue
 
         aggregated, seg_weights = _aggregate_segment_probs(segment_probs, saliency_scores, config)
-        raw_pred = int(np.argmax(aggregated))
+        # [수정 2026-07-13] raw/최종 예측 모두 threshold 결정 적용(기존 argmax).
+        # others-calibration이 개입해 others로 강등한 경우(forced)만 그 결과를 유지한다.
+        raw_pred = _decide_with_threshold(aggregated, cls, config)
         calibrated_prob, pred, cal_meta = _apply_others_calibration(aggregated, cls, config)
+        if not cal_meta["forced_to_others"]:
+            pred = _decide_with_threshold(calibrated_prob, cls, config)
 
         y_true.append(tidx)
         y_pred.append(pred)
