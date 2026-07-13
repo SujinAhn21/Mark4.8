@@ -110,7 +110,19 @@ class AudioViLDConfig:
         # 시뮬레이션). 주의: 이 값은 test set으로 고른 것이라 val set 기준 재검증이 이상적임.
         # 또한 mark4.8 학습 결과 기준이므로 다른 4.x 버전은 각자 재튜닝 필요.
         # None이면 기존 argmax 동작. 2-class가 아니면 무시됨.
-        self.target_decision_threshold = 0.40
+        # [갱신 2026-07-13] 0.40 -> 0.42. 데이터 증량(train 실데이터 클래스당 436) 재학습 모델에서
+        # val set 스윕(0.30~0.65, 0.01 간격)으로 재선정: val에서 accuracy(0.83)와 macro F1(0.830)
+        # 둘 다 0.42가 최고였음(0.49~0.50도 accuracy 동률이나 dog recall이 낮아 감지 용도상 0.42 채택).
+        # val로 고른 0.42의 test 성능: accuracy 0.85, dog R 0.86, others R 0.84, FPR 0.16.
+        # 이전 0.40은 test로 골랐던 값 -> 이번부터 val 기준 선정으로 절차 개선.
+        # [갱신 2026-07-14] 0.42 -> 0.55. teacher 강화(TeacherAudioEncoder+SpecAugment) 재학습
+        # 모델은 dog confidence 분포가 전체적으로 우측 이동(진짜 dog Prob 중앙값 0.647->0.762)해서
+        # 0.42가 dog 쪽으로 치우친 운영점이 됨(FPR 0.26). 새 모델 val 스윕 결과 0.55~0.57 구간이
+        # 최적 동률(acc 0.81, macroF1 0.810) -> dog recall이 가장 높은 0.55 채택.
+        # val로 고른 0.55의 test 성능: accuracy 0.85, dog R 0.84, others R 0.86, FPR 0.14.
+        # ⚠️ 재학습마다 confidence 분포가 이동하므로, 재학습 후에는 반드시
+        # `eval.py --split val`로 스윕해서 이 값을 재선정할 것(모델-종속 파라미터).
+        self.target_decision_threshold = 0.55
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
         # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).
@@ -136,6 +148,23 @@ class AudioViLDConfig:
         # [추가 2026-07-12 / 가설3] teacher CE에 label smoothing. teacher가 약하고 일찍
         # 과적합하는 문제 완화용. 0이면 기존과 동일 동작.
         self.teacher_label_smoothing = 0.1
+        # [추가 2026-07-13 / teacher 강화] 그동안 teacher는 student와 완전히 같은 초경량
+        # 인코더(SimpleAudioEncoder, 약 14.3만 파라미터)를 썼음 -> KD인데 teacher의 용량 우위가
+        # 전혀 없어 teacher가 구조적으로 약했음(가장 약한 고리). teacher는 엣지에 배포되지 않고
+        # 오프라인에서 soft label을 만들 때만 쓰이므로 키워도 경량(엣지) 정체성과 무관하며
+        # (profile_efficiency.py도 student만 측정함), "큰 teacher -> 작은 student" 구도가 되어
+        # KD 서사도 강해짐. 근거 실측: 인코더 2블록->3블록 확장 때 teacher val best 0.59->0.52로
+        # teacher 역시 용량이 지배 변수였음.
+        self.use_large_teacher_encoder = True   # False면 기존처럼 student와 같은 인코더 사용
+        # teacher 학습 배치에만 적용하는 SpecAugment(주파수/시간 마스킹). val은 clean 유지.
+        # 작은 데이터(세그먼트 단위)에서 표준적인 과적합 완화책. 마스킹 값은 배치 최솟값(dB 최저=무음).
+        self.teacher_spec_augment = True
+        self.teacher_freq_mask_param = 12       # 최대 마스킹 mel 밴드 폭(전체 64)
+        self.teacher_time_mask_param = 20       # 최대 마스킹 시간 프레임 폭(전체 101)
+        # teacher에도 LR 스케줄 추가(student는 이미 있음). 고정 LR(1e-4)이 val 요동(0.52~0.62)의
+        # 한 원인이었음 -> val loss 정체 시 절반으로 감소.
+        self.teacher_lr_factor = 0.5
+        self.teacher_lr_patience = 3
         # [추가 2026-07-12 / 가설1] 증류 loss 배분. 기존에는 student_train_distillation.py에
         # alpha=0.7, T=4.0이 하드코딩되어 있었음. 실측(2026-07-12): soft loss가 0.02 수준으로
         # 신호가 거의 없는데 총 loss의 70%를 차지해 분류(hard, 30%)가 굶주렸고, 그 결과

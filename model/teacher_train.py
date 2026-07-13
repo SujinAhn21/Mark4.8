@@ -24,7 +24,7 @@ for p in (PROJECT_ROOT, UTILS_DIR, VILD_DIR):
         sys.path.append(p)
 
 from vild_config import AudioViLDConfig
-from vild_model import SimpleAudioEncoder, ViLDTextHead
+from vild_model import SimpleAudioEncoder, ViLDTextHead, build_teacher_encoder
 from vild_parser_teacher import AudioParser
 from vild_losses import ViLDLosses
 from seed_utils import set_seed
@@ -84,6 +84,27 @@ def custom_collate(batch):
     mels = torch.stack(mels, dim=0)
     return mels, labels
 
+def _spec_augment(mel, freq_mask_param=12, time_mask_param=20):
+    """
+    [추가 2026-07-13 / teacher 강화] SpecAugment(주파수/시간 마스킹) — teacher 학습 배치 전용.
+    샘플마다 주파수 밴드 1개 + 시간 구간 1개를 무작위 폭으로 가린다. 마스킹 값은 해당 샘플의
+    최솟값(dB 스펙트로그램의 최저 = 무음)이라 '0으로 채우면 중간 에너지가 되어버리는' 함정을 피함.
+    val/eval 경로에는 적용하지 않는다(clean 평가 유지).
+    """
+    out = mel.clone()
+    B, _, n_mels, n_time = out.shape
+    for i in range(B):
+        fill = out[i].min()
+        f = int(torch.randint(0, freq_mask_param + 1, (1,)).item())
+        if f > 0 and n_mels > f:
+            f0 = int(torch.randint(0, n_mels - f, (1,)).item())
+            out[i, :, f0:f0 + f, :] = fill
+        t = int(torch.randint(0, time_mask_param + 1, (1,)).item())
+        if t > 0 and n_time > t:
+            t0 = int(torch.randint(0, n_time - t, (1,)).item())
+            out[i, :, :, t0:t0 + t] = fill
+    return out
+
 def train_teacher(seed_value=42, mark_version="mark4.1"):
     set_seed(seed_value)
     config = AudioViLDConfig(mark_version=mark_version)
@@ -107,16 +128,31 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True,  collate_fn=custom_collate)
     val_loader   = DataLoader(val_dataset,   batch_size=8, shuffle=False, collate_fn=custom_collate)
 
-    teacher_encoder = SimpleAudioEncoder(config).to(device)
+    # [수정 2026-07-13 / teacher 강화] student와 같은 초경량 인코더 대신 teacher 전용 대형
+    # 인코더 사용(config.use_large_teacher_encoder). extract_soft_labels.py도 같은 팩토리를
+    # 쓰므로 체크포인트 구조가 항상 일치한다.
+    teacher_encoder = build_teacher_encoder(config).to(device)
     teacher_classifier = ViLDTextHead(config).to(device)
+    n_params = sum(p.numel() for p in teacher_encoder.parameters())
+    print(f"[INFO] Teacher encoder: {type(teacher_encoder).__name__} ({n_params:,} params)")
     # [수정 2026-07-12 / 가설6] weight_decay 추가(기존 0). teacher가 val best를 epoch 5에
     # 찍고 곧장 과적합(train down/val up)하던 실측에 대한 L2 정규화 처방.
     optimizer = optim.Adam(list(teacher_encoder.parameters()) + list(teacher_classifier.parameters()),
                            lr=config.learning_rate,
                            weight_decay=getattr(config, "weight_decay", 0.0))
+    # [추가 2026-07-13 / teacher 강화] LR 스케줄(student에는 이미 있고 teacher에는 없었음).
+    # 고정 LR이 val 요동(0.52~0.62)의 한 원인 -> val loss 정체 시 절반으로.
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        factor=getattr(config, "teacher_lr_factor", 0.5),
+        patience=getattr(config, "teacher_lr_patience", 3),
+    )
+    use_specaug = getattr(config, "teacher_spec_augment", False)
     loss_fn = ViLDLosses(config)
 
-    print(f"[INFO] Teacher training started for {mark_version} on {device}")
+    print(f"[INFO] Teacher training started for {mark_version} on {device}"
+          + (f" | SpecAugment on (F<={getattr(config,'teacher_freq_mask_param',12)},"
+             f" T<={getattr(config,'teacher_time_mask_param',20)})" if use_specaug else ""))
     best_val = float('inf')
     # [수정 2026-07-11] patience=2 하드코딩 -> config.teacher_patience(기본 10)로 변경.
     # num_epochs=80까지 돌 수 있는데 val loss가 한 번만 반등해도 5epoch 안에 조기종료되어,
@@ -135,6 +171,13 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
                 mel = mel.squeeze(1)
             elif mel.dim() == 3:
                 mel = mel.unsqueeze(1)
+
+            if use_specaug:
+                mel = _spec_augment(
+                    mel,
+                    freq_mask_param=getattr(config, "teacher_freq_mask_param", 12),
+                    time_mask_param=getattr(config, "teacher_time_mask_param", 20),
+                )
 
             targets = torch.tensor([label_map[l] for l in label_batch], dtype=torch.long).to(device)
             region = teacher_encoder(mel)
@@ -162,6 +205,12 @@ def train_teacher(seed_value=42, mark_version="mark4.1"):
                 total += loss.item()
         vl = total / max(1, len(val_loader)); val_hist.append(vl)
         print(f"[Epoch {epoch+1}] Train {tr:.4f} | Val {vl:.4f}")
+
+        prev_lr = optimizer.param_groups[0]["lr"]
+        scheduler.step(vl)
+        new_lr = optimizer.param_groups[0]["lr"]
+        if new_lr != prev_lr:
+            print(f"[LR] {prev_lr:g} -> {new_lr:g} (val={vl:.6f})")
 
         if vl < best_val:
             best_val = vl; wait = 0
