@@ -122,7 +122,11 @@ class AudioViLDConfig:
         # val로 고른 0.55의 test 성능: accuracy 0.85, dog R 0.84, others R 0.86, FPR 0.14.
         # ⚠️ 재학습마다 confidence 분포가 이동하므로, 재학습 후에는 반드시
         # `eval.py --split val`로 스윕해서 이 값을 재선정할 것(모델-종속 파라미터).
-        self.target_decision_threshold = 0.55
+        # [갱신 2026-07-15] 0.55 -> 0.47. 데이터 정제(1572->1501, 불량 71개 제거) 재학습 모델의
+        # val(99개) 스윕 결과 0.47~0.49가 accuracy 동률(0.818) -> dog recall이 가장 높은 0.47 채택
+        # (감지 용도 기준). val로 고른 0.47의 test(97개) 성능: accuracy 0.866, macro F1 0.866,
+        # dog R 0.84, others R 0.90, FPR 0.104 -> 정제 전(0.85/FPR 0.14)보다 개선.
+        self.target_decision_threshold = 0.47
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
         # top_conf가 최소 약 0.80은 되어야 함(균등분산 최악 케이스 기준 실측 계산).
