@@ -1,4 +1,4 @@
-# model/eval.py  
+# model/eval.py    
 
 """
 [Deprecated: 평가용 샘플을 per_class_max=30으로 샘플링하던 로직]
@@ -188,7 +188,8 @@ def _save_visual_explanation(path, segments, segment_probs, segment_weights, cla
     fig.savefig(out_path)
     plt.close(fig)
 
-def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1", split="test"):
+def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1", split="test",
+             profile_latency=False, profile_warmup=10, profile_runs=100):
     set_seed(seed_value)
     config = AudioViLDConfig(mark_version=mark_version)
     # [추가 2026-07-13] test가 아닌 split(예: val)을 평가할 때는 결과 파일명에 split을 붙여
@@ -242,6 +243,74 @@ def evaluate(audio_label_list, seed_value=42, mark_version="mark4.1", split="tes
         logits = logits.clone()
         logits[:, others_idx] = torch.maximum(logits[:, others_idx], bg_logit)
         return logits
+
+    # [추가 2026-07-26] 속도 프로파일링 모드: 실제 클립으로 이미지화(load_and_segment) 시간과
+    # 추론(세그먼트 forward + 집계) 시간을 나눠 측정한다. 엣지 배포 타겟이 CPU이므로 CPU 강제.
+    # 정확도 평가는 하지 않고 시간만 잰다(아래 정확도 루프는 건너뜀). mark_version 인자로 Mark5에도 재사용.
+    if profile_latency:
+        import time as _t, json as _json
+        _dev = torch.device("cpu")
+        enc.to(_dev); branch_head.to(_dev); head.to(_dev)
+        _txt = text_emb.to(_dev)
+        _bg = background_embedding.to(_dev) if background_embedding is not None else None
+        _w = getattr(config, "distill_branch_eval_weight", 0.5)
+        img_ms, inf_ms = [], []
+        n_total = min(len(audio_label_list), profile_warmup + profile_runs)
+        print(f"[속도측정] {mark_version}/{split} · CPU · warmup {profile_warmup} + 측정 {max(0, n_total - profile_warmup)}클립")
+        for _i, (_path, _lbl) in enumerate(audio_label_list[:n_total]):
+            _s0 = _t.perf_counter()
+            _segs = parser.load_and_segment(_path)              # ① 이미지화 (파형→mel→세그먼트)
+            _s1 = _t.perf_counter()
+            if not _segs:
+                continue
+            with torch.no_grad():                                # ② 추론 (세그먼트 forward + 집계)
+                _sp, _sal = [], []
+                for _seg in _segs:
+                    if _seg is None or _seg.ndim not in (3, 4): continue
+                    if _seg.ndim == 3: _seg = _seg.unsqueeze(0)
+                    _seg = _seg.to(_dev)
+                    _feat = enc(_seg)
+                    _supf, _disf = branch_head(_feat)
+                    _sl = head(_supf, _txt); _dl = head(_disf, _txt)
+                    if _bg is not None:
+                        _sl = _apply_background_override(_sl, _supf)
+                        _dl = _apply_background_override(_dl, _disf)
+                    _prob = ((1 - _w) * torch.softmax(_sl, dim=-1)
+                             + _w * torch.softmax(_dl, dim=-1)).squeeze(0)
+                    _sp.append(_prob.cpu().numpy())
+                    _sal.append(_compute_segment_saliency(_seg.cpu()))
+                if _sp:
+                    _aggregate_segment_probs(_sp, _sal, config)
+            _s2 = _t.perf_counter()
+            if _i >= profile_warmup:                             # warmup 클립은 통계에서 제외
+                img_ms.append((_s1 - _s0) * 1000.0)
+                inf_ms.append((_s2 - _s1) * 1000.0)
+        if not img_ms:
+            print("[속도측정] 측정된 클립이 없습니다(warmup보다 유효 클립이 적음)."); return
+        _img = np.array(img_ms); _inf = np.array(inf_ms); _tot = _img + _inf
+        _med_tot = float(np.median(_tot))
+        _share = float(np.median(_img) / _med_tot * 100) if _med_tot > 0 else 0.0
+        print("=" * 56)
+        print(f"[속도 프로파일] {mark_version}/{split} · CPU · {len(img_ms)}클립 (warmup {profile_warmup} 제외)")
+        for _name, _a in [("이미지화", _img), ("추론", _inf), ("전체", _tot)]:
+            print(f"  {_name:8s}: 평균 {_a.mean():7.1f} · 중앙 {np.median(_a):7.1f} · 표준편차 {_a.std():6.1f} ms")
+        print(f"  이미지화 비중(중앙값): {_share:.1f}%")
+        print(f"  전체 중앙 {_med_tot:.1f}ms → 1초 이내 실시간: {'예 O' if _med_tot < 1000 else '아니오 X'}")
+        _out = {
+            "mark_version": mark_version, "split": split, "device": "cpu",
+            "n_clips": len(img_ms), "warmup": profile_warmup,
+            "imaging_ms":   {"mean": float(_img.mean()), "median": float(np.median(_img)), "std": float(_img.std())},
+            "inference_ms": {"mean": float(_inf.mean()), "median": float(np.median(_inf)), "std": float(_inf.std())},
+            "total_ms":     {"mean": float(_tot.mean()), "median": _med_tot,               "std": float(_tot.std())},
+            "imaging_share_pct": _share,
+            "realtime_under_1s": bool(_med_tot < 1000),
+        }
+        _pdir = os.path.join(PROJECT_ROOT, "plots"); os.makedirs(_pdir, exist_ok=True)
+        _pjson = os.path.join(_pdir, f"latency_profile_{out_tag}.json")
+        with open(_pjson, "w", encoding="utf-8") as _f:
+            _json.dump(_out, _f, ensure_ascii=False, indent=2)
+        print(f"  저장: {_pjson}")
+        return
 
     y_true, y_pred, y_prob, paths = [], [], [], []
     raw_y_pred, raw_y_prob = [], []
@@ -398,6 +467,10 @@ if __name__ == "__main__":
     # val은 target_decision_threshold 같은 운영점을 test가 아닌 데이터로 재검증할 때 쓴다.
     # split이 test가 아니면 결과 파일명에 _{split}이 붙어 test 결과를 덮지 않는다.
     parser.add_argument('--split', type=str, default='test', choices=['test', 'val'])
+    # [추가 2026-07-26] 속도 프로파일링 모드: 정확도 대신 이미지화/추론 지연시간(ms/클립)을 CPU에서 측정.
+    parser.add_argument('--profile_latency', action='store_true', help='이미지화+추론 속도만 측정(정확도 스킵)')
+    parser.add_argument('--profile_warmup', type=int, default=10, help='통계에서 제외할 warmup 클립 수')
+    parser.add_argument('--profile_runs', type=int, default=100, help='측정할 클립 수(warmup 제외)')
     args = parser.parse_args()
 
     config = AudioViLDConfig(mark_version=args.mark_version)
@@ -423,5 +496,7 @@ if __name__ == "__main__":
     if not valid:
         print(f"[ERROR] 평가할 유효 {args.split} 샘플이 없습니다.")
     else:
-        evaluate(valid, seed_value=42, mark_version=args.mark_version, split=args.split)
+        evaluate(valid, seed_value=42, mark_version=args.mark_version, split=args.split,
+                 profile_latency=args.profile_latency,
+                 profile_warmup=args.profile_warmup, profile_runs=args.profile_runs)
     

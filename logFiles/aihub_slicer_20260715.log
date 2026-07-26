@@ -1,0 +1,22 @@
+[INFO] provenance 1572행(active 1501), 기존 aihub 원본 0개
+[INFO] dog 풀 951클립, others 카테고리 37개 (클립 3763개)
+[계획] test/dog_bark +151, test/others +152, train/dog_bark +400, train/others +400, val/dog_bark +150, val/others +151
+[INFO] provenance 백업: data_provenance.xlsx.bak_before_aihub_20260715_211415
+[진행] 200/1404 — 0.3분 경과, provenance 중간 저장
+[진행] 400/1404 — 0.6분 경과, provenance 중간 저장
+[진행] 600/1404 — 0.8분 경과, provenance 중간 저장
+[진행] 800/1404 — 1.1분 경과, provenance 중간 저장
+[진행] 1000/1404 — 1.4분 경과, provenance 중간 저장
+[진행] 1200/1404 — 1.8분 경과, provenance 중간 저장
+[진행] 1400/1404 — 2.2분 경과, provenance 중간 저장
+[진행] 1404/1404 — 2.2분 경과, provenance 중간 저장
+
+[완료] 신규 저장 1404개
+[실제] test/dog_bark +151, test/others +152, train/dog_bark +400, train/others +400, val/dog_bark +150, val/others +151
+[WARN] 전 창이 저 RMS 라 첫 후보를 그대로 쓴 클립 4개(품질 확인 권장):
+  - N-10_221009_A_5_a_16219.wav (A.층간소음_5.애완동물_a.강아지짓는소리)
+  - N-10_221008_A_5_a_16206.wav (A.층간소음_5.애완동물_a.강아지짓는소리)
+  - N-10_220922_A_5_a_16662.wav (A.층간소음_5.애완동물_a.강아지짓는소리)
+  - N-10_220914_A_5_a_16549.wav (A.층간소음_5.애완동물_a.강아지짓는소리)
+provenance: /mnt/c/workspace/journal/codes/data_provenance.xlsx (2976행)
+다음 단계: generate_dataset_index.py 재실행

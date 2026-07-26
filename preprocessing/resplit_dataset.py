@@ -107,6 +107,101 @@ def resplit(mark_version: str, seed: int, provenance_path: str, split_sizes: lis
     print(f"  python preprocessing/generate_dataset_index.py --mark_version {mark_version}")
 
 
+def resplit_source_stratified(mark_version, seed, provenance_path,
+                              val_per_class, test_per_class, dry_run=False):
+    """[추가 2026-07-26] 원본(증강 제외)만 대상으로, 각 클래스 안에서 소스
+    (fsd50k/aihub)를 층화해 val/test에 소스 비율대로 배정하고 나머지를 train으로.
+    증강은 이 단계 이후 augment_density.py로 새 train 기준 재생성한다.
+
+    배경: AI Hub 개951 편입 후 val/test가 AI Hub 편중(75%), train이 FSD50K 편중이
+    되어 학습·평가 소스가 어긋났다(dev/eval 붕괴와 같은 도메인 시프트 위험). 각
+    split에 두 소스를 같은 비율로 섞어 이 편중을 없앤다."""
+    random.seed(seed)
+    data_root = os.path.join(PROJECT_ROOT, "data")
+    df = pd.read_excel(provenance_path)
+    base_mask = (
+        (df["mark_version"] == mark_version)
+        & (df["removed_20260715"] == "active")
+        & (df["source_type"] == "original")
+    )
+    base = df[base_mask]
+    if base.empty:
+        raise ValueError(f"[ERROR] active original 행 없음: mark_version='{mark_version}'")
+
+    new_split_of = {}   # df index -> new split
+    summary = {}        # (class, source, split) -> count
+    for target_class, cls_group in base.groupby("target_class"):
+        cls_total = len(cls_group)
+        sources = sorted(cls_group["source"].unique())
+        acc_val = acc_test = 0
+        for i, src in enumerate(sources):
+            src_idx = list(cls_group[cls_group["source"] == src].index)
+            random.shuffle(src_idx)
+            ssize = len(src_idx)
+            if i < len(sources) - 1:      # 소스별 비례 배분, 마지막 소스가 잔차 흡수
+                v = round(val_per_class * ssize / cls_total)
+                t = round(test_per_class * ssize / cls_total)
+            else:
+                v = val_per_class - acc_val
+                t = test_per_class - acc_test
+            acc_val += v
+            acc_test += t
+            p = 0
+            for _ in range(v):
+                new_split_of[src_idx[p]] = "val"; p += 1
+            for _ in range(t):
+                new_split_of[src_idx[p]] = "test"; p += 1
+            for j in range(p, ssize):
+                new_split_of[src_idx[j]] = "train"
+            summary[(target_class, src, "val")] = v
+            summary[(target_class, src, "test")] = t
+            summary[(target_class, src, "train")] = ssize - v - t
+
+    print(f"[소스층화 재분할 계획] mark={mark_version}, val/test per class = {val_per_class}/{test_per_class}")
+    for key in sorted(summary):
+        cls, src, sp = key
+        print(f"  {cls:10s} {src:7s} {sp:5s} : {summary[key]}")
+    agg = {}
+    for (cls, src, sp), c in summary.items():
+        agg[(cls, sp)] = agg.get((cls, sp), 0) + c
+    print("  --- split × class 합 (원본만) ---")
+    for key in sorted(agg):
+        print(f"  {key[0]:10s} {key[1]:5s} : {agg[key]}")
+
+    if dry_run:
+        print("[dry_run] 파일 이동·provenance 기록 없음.")
+        return
+
+    staging = os.path.join(PROJECT_ROOT, f"_resplit_staging_{mark_version}")
+    os.makedirs(staging, exist_ok=True)
+    moves = []
+    for idx, new_split in new_split_of.items():
+        row = df.loc[idx]
+        old_path = os.path.join(data_root, row["assigned_split"], row["local_filename"])
+        if not os.path.exists(old_path):
+            raise FileNotFoundError(f"원본 파일 없음: {old_path}")
+        staged = os.path.join(staging, row["local_filename"])
+        shutil.move(old_path, staged)
+        moves.append((idx, new_split, staged, row["target_class"]))
+
+    counters = {}
+    for idx, new_split, staged, cls in moves:
+        counters[(cls, new_split)] = counters.get((cls, new_split), 0) + 1
+        new_name = f"{cls}_{new_split}_{counters[(cls, new_split)]:03d}.wav"
+        dst_dir = os.path.join(data_root, new_split)
+        os.makedirs(dst_dir, exist_ok=True)
+        shutil.move(staged, os.path.join(dst_dir, new_name))
+        df.loc[idx, "assigned_split"] = new_split
+        df.loc[idx, "local_filename"] = new_name
+
+    df.to_excel(provenance_path, index=False)
+    if os.listdir(staging):
+        raise RuntimeError(f"[ERROR] 스테이징 잔존: {os.listdir(staging)}")
+    os.rmdir(staging)
+    print(f"[완료] 원본 {len(moves)}개 소스층화 재분할 + provenance 갱신.")
+    print("[다음] generate_dataset_index.py 재실행 → augment_density.py로 train 재증강.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="FSD50K dev/eval 경계를 무시하고 클래스별 파일을 무작위로 train/val/test에 재배정합니다."
@@ -125,16 +220,31 @@ if __name__ == "__main__":
         default="train:100,val:50,test:50",
         help="클래스당 split별 파일 수. 예: train:100,val:50,test:50",
     )
+    parser.add_argument("--stratify_source", action="store_true",
+                        help="원본(증강 제외)만 소스(fsd50k/aihub) 층화 재분할")
+    parser.add_argument("--val_per_class", type=int, default=214)
+    parser.add_argument("--test_per_class", type=int, default=214)
+    parser.add_argument("--dry_run", action="store_true", help="파일 이동 없이 계획만 출력")
     args = parser.parse_args()
 
-    parsed_sizes = []
-    for item in args.split_sizes.split(","):
-        name, count = item.split(":")
-        parsed_sizes.append((name.strip(), int(count)))
+    if args.stratify_source:
+        resplit_source_stratified(
+            mark_version=args.mark_version,
+            seed=args.seed,
+            provenance_path=args.provenance_path,
+            val_per_class=args.val_per_class,
+            test_per_class=args.test_per_class,
+            dry_run=args.dry_run,
+        )
+    else:
+        parsed_sizes = []
+        for item in args.split_sizes.split(","):
+            name, count = item.split(":")
+            parsed_sizes.append((name.strip(), int(count)))
 
-    resplit(
-        mark_version=args.mark_version,
-        seed=args.seed,
-        provenance_path=args.provenance_path,
-        split_sizes=parsed_sizes,
-    )
+        resplit(
+            mark_version=args.mark_version,
+            seed=args.seed,
+            provenance_path=args.provenance_path,
+            split_sizes=parsed_sizes,
+        )

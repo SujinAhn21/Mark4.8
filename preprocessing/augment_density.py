@@ -92,7 +92,9 @@ def main():
     parser = argparse.ArgumentParser(description="클래스간 소리 밀도 격차 완화 증강(train 한정 기본)")
     parser.add_argument("--mark_version", type=str, required=True, help="예: mark4.8")
     parser.add_argument("--target_split", type=str, default="train", help="증강 대상 split(기본 train)")
-    parser.add_argument("--n_aug_per_class", type=int, default=100, help="클래스당 생성할 증강본 수")
+    parser.add_argument("--n_aug_per_class", type=int, default=100, help="클래스당 생성할 증강본 수(target_per_class 미지정 시)")
+    parser.add_argument("--target_per_class", type=int, default=None,
+                        help="지정 시 각 클래스를 이 수까지 채움(원본 부족분만큼 증강). 클래스별 원본 수가 달라도 목표 총량을 맞춘다.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--provenance_path", type=str, default=None,
                         help="data_provenance.xlsx 경로(기본: codes/data_provenance.xlsx)")
@@ -142,18 +144,30 @@ def main():
     print(f"  성긴 클래스(빽빽화 대상): {sparse_cls}  /  빽빽한 클래스(성김화 대상): {dense_cls}")
     sparse_target = means[sparse_cls]  # 빽빽한 쪽을 성긴 쪽 수준으로 낮춤
 
+    # ---- 증강 수 결정 (target_per_class 지정 시 클래스별 부족분) ----
+    if args.target_per_class is not None:
+        n_sparse = args.target_per_class - len(by_class[sparse_cls])
+        n_dense = args.target_per_class - len(by_class[dense_cls])
+        if n_sparse < 0 or n_dense < 0:
+            print(f"[ERROR] target_per_class={args.target_per_class}가 원본 수보다 작음 "
+                  f"({sparse_cls}={len(by_class[sparse_cls])}, {dense_cls}={len(by_class[dense_cls])})")
+            sys.exit(1)
+    else:
+        n_sparse = n_dense = args.n_aug_per_class
+    print(f"  증강 수: {sparse_cls} +{n_sparse}, {dense_cls} +{n_dense}")
+
     # ---- 증강 생성 ----
     plan = []  # (out_path, waveform, method, source_base, active)
     # 성긴 클래스: 성긴 것부터 골라 densify
     src_sparse = sorted(by_class[sparse_cls], key=lambda t: t[3])
-    for i in range(args.n_aug_per_class):
+    for i in range(n_sparse):
         srcpath, x, sr, _ = src_sparse[i % len(src_sparse)]
         aug = densify(x, sr, rng)
         out_base = f"{sparse_cls}_{args.target_split}_aug_{i+1:03d}.wav"
         plan.append((os.path.join(split_dir, out_base), aug, "densify", os.path.basename(srcpath), active_ratio(aug, sr)))
     # 빽빽한 클래스: 빽빽한 것부터 골라 sparsify
     src_dense = sorted(by_class[dense_cls], key=lambda t: t[3], reverse=True)
-    for i in range(args.n_aug_per_class):
+    for i in range(n_dense):
         srcpath, x, sr, _ = src_dense[i % len(src_dense)]
         aug = sparsify(x, sr, sparse_target, rng)
         out_base = f"{dense_cls}_{args.target_split}_aug_{i+1:03d}.wav"
@@ -166,7 +180,7 @@ def main():
         return orig + aug
     da = all_active(sparse_cls); oa = all_active(dense_cls)
     print(f"[증강 후 예상] {sparse_cls} mean={np.mean(da):.4f}  {dense_cls} mean={np.mean(oa):.4f}  격차={np.mean(da)-np.mean(oa):+.4f}")
-    print(f"  생성 예정 파일: {len(plan)}개 (클래스당 {args.n_aug_per_class})")
+    print(f"  생성 예정 파일: {len(plan)}개 ({sparse_cls} {n_sparse} + {dense_cls} {n_dense})")
 
     if args.dry_run:
         print("[dry_run] 파일/엑셀 안 씀. 계획만 출력하고 종료.")
@@ -198,6 +212,7 @@ def main():
         # 소스 원본 행에서 라벨 등 상속
         src_row = df[df["local_filename"] == src_base]
         orig_labels = src_row["original_labels"].iloc[0] if len(src_row) else ""
+        src_source = src_row["source"].iloc[0] if (len(src_row) and "source" in df.columns) else ""
         new_rows.append({
             "local_filename": base,
             "fsd50k_fname": "",
@@ -214,6 +229,8 @@ def main():
             "aug_method": method,
             "aug_source_file": src_base,
             "active_ratio": round(act, 4),
+            "source": src_source,
+            "removed_20260715": "active",
         })
     df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
     df.to_excel(prov_path, index=False)

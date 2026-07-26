@@ -1,0 +1,8 @@
+{
+  "python.analysis.extraPaths": [
+    "./utils",
+    "./vild"
+  ],
+  "python.defaultInterpreterPath": "/mnt/c/workspace/journal/codes/.venv/bin/python",
+  "python.terminal.activateEnvironment": true
+}
