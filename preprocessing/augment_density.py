@@ -23,6 +23,7 @@ import os
 import sys
 import glob
 import time
+import shutil
 import hashlib
 import argparse
 
@@ -99,6 +100,10 @@ def main():
     parser.add_argument("--provenance_path", type=str, default=None,
                         help="data_provenance.xlsx 경로(기본: codes/data_provenance.xlsx)")
     parser.add_argument("--dry_run", action="store_true", help="파일/엑셀 안 쓰고 계획만 출력")
+    parser.add_argument("--reset", action="store_true",
+                        help="기존 증강본(파일 + provenance 행)을 먼저 지우고 새로 만든다. "
+                             "재분할 뒤 재증강할 때 필요하다(안 지우면 이전 증강본이 새 train 구성과 "
+                             "어긋난 채 남고 provenance 행도 중복된다)")
     args = parser.parse_args()
 
     rng = np.random.default_rng(args.seed)
@@ -114,6 +119,38 @@ def main():
     else:
         # codes/ 루트(= project_root의 상위)에 data_provenance.xlsx
         prov_path = os.path.join(os.path.dirname(project_root), "data_provenance.xlsx")
+
+    # ---- [추가 2026-07-31] --reset: 기존 증강본 제거 ----
+    if args.reset:
+        old_aug = sorted(glob.glob(os.path.join(split_dir, "*_aug_*.wav")))
+        if not old_aug:
+            print("[reset] 지울 기존 증강본이 없습니다.")
+        elif args.dry_run:
+            print(f"[reset/dry_run] 기존 증강본 {len(old_aug)}개와 그 provenance 행을 지울 예정")
+        else:
+            import pandas as pd
+            names = {os.path.basename(p) for p in old_aug}
+            if os.path.exists(prov_path):
+                bak = prov_path + f".bak_before_reset_{time.strftime('%Y%m%d_%H%M%S')}"
+                shutil.copy2(prov_path, bak)
+                dfp = pd.read_excel(prov_path)
+                if "source_type" in dfp.columns:
+                    drop = (dfp["source_type"] == "augmented") & \
+                           dfp["local_filename"].astype(str).isin(names)
+                else:
+                    drop = dfp["local_filename"].astype(str).isin(names)
+                # [수정 2026-07-31] 지금 살아있는 증강본만 지운다. 파일명은 세대마다 재사용되므로
+                # (예: others_train_aug_069) 이름만 보고 지우면 과거에 품질 문제로 제거된 행의
+                # 이력까지 함께 사라진다. 실제로 이 조건이 없어서 446행이 지워졌는데 파일은
+                # 428개였다(차액 18개가 옛 제거 이력).
+                if "removed_20260715" in dfp.columns:
+                    drop &= (dfp["removed_20260715"] == "active")
+                dfp[~drop].to_excel(prov_path, index=False)
+                print(f"[reset] provenance 증강 {int(drop.sum())}행 삭제 "
+                      f"(백업 {os.path.basename(bak)})")
+            for p in old_aug:
+                os.remove(p)
+            print(f"[reset] 기존 증강 wav {len(old_aug)}개 삭제 -> {split_dir}")
 
     # ---- 파일 로드 + 클래스 판별(파일명 접두 target_class로) ----
     wavs = sorted(glob.glob(os.path.join(split_dir, "*.wav")))

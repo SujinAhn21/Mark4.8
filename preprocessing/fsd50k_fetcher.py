@@ -43,6 +43,15 @@ import soundfile as sf
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))          # preprocessing
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
+# 수집 기준과 사후 검증 기준이 어긋나지 않도록 판정 함수를 validate_dataset 과 공유한다.
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+from validate_dataset import check_waveform                     # noqa: E402
+
+# provenance 에서 "이 행이 살아있는 데이터인가"를 나타내는 컬럼. 이름에 날짜가 박혀 있지만
+# resplit_dataset / augment_density / validate_dataset 이 모두 이 컬럼으로 active 를 판정한다.
+ACTIVE_COLUMN = "removed_20260715"
+
 ZENODO_RECORD_API = "https://zenodo.org/api/records/4060432"
 ZENODO_FILE_URL = "https://zenodo.org/records/4060432/files/{name}?download=1"
 
@@ -274,12 +283,29 @@ def main():
     ap.add_argument("--exclude_labels", type=str, default=",".join(sorted(DEFAULT_EXCLUDE)),
                     help="others 에서 하나라도 있으면 제외할 라벨(콤마 구분)")
     ap.add_argument("--split", type=str, default="train", choices=["train", "val", "test"])
+    # [추가 2026-07-31] others 목표를 target 과 따로 정할 수 있게 한다.
+    # 원래는 others 개수가 target 후보 수에 묶여 있었는데, mark4.8 의 FSD50K dog 클립은 536개를
+    # 전량 소진해 후보가 0개다(교체분은 AI Hub 에서 가져온다). 그 상태에서 others 만 받으려면
+    # 분리가 필요하다.
+    ap.add_argument("--n_others", type=int, default=None,
+                    help="others 목표 개수(기본: target 과 동일). target 없이 others 만 받을 때 지정")
     ap.add_argument("--max_new_per_class", type=int, default=None,
                     help="클래스당 신규 수집 상한(기본: 타겟 가용량 전부)")
     ap.add_argument("--provenance_path", type=str,
                     default=os.path.join(PROJECT_ROOT, "..", "data_provenance.xlsx"))
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--dry_run", action="store_true")
+    # [추가 2026-07-31] 수집 단계 품질 게이트.
+    # 이전에는 받은 클립을 길이 검사 없이 그대로 저장했다(3초 미만 패딩은 fix_audio_length 가
+    # 한다고 미뤘음). 그 결과 0.5초짜리가 206개 섞여 들어갔고, train 44개는 파서가 통째로
+    # 버려서 학습에 아예 안 들어갔다. 무음 패딩은 정보를 늘리지 않으므로 수집에서 막는다.
+    ap.add_argument("--min_duration", type=float, default=3.0,
+                    help="이보다 짧은 클립은 채택하지 않고 다음 후보로 넘어간다"
+                         "(3.0초 = 서로 다른 세그먼트 5개를 만들 수 있는 최소 길이)")
+    ap.add_argument("--oversample", type=float, default=2.5,
+                    help="목표 개수의 몇 배까지 후보를 확보할지. 길이·품질 미달분을 대체하는 데 쓴다")
+    ap.add_argument("--no_quality_check", action="store_true",
+                    help="길이/음량/클리핑 검사를 끄고 예전처럼 받은 대로 저장(권장하지 않음)")
     args = ap.parse_args()
 
     session = requests.Session()
@@ -308,10 +334,16 @@ def main():
 
     target_cand = [(f, labs, vol) for f, (labs, vol) in gt.items()
                    if target_labels <= labs and f not in used]
-    if args.max_new_per_class is not None and len(target_cand) > args.max_new_per_class:
-        idx = rng.choice(len(target_cand), size=args.max_new_per_class, replace=False)
+    # [변경 2026-07-31] 목표 개수와 후보 개수를 분리한다. 품질 검사에서 탈락하는 클립이 있으므로
+    # 후보를 목표의 oversample 배까지 확보해 두고, 저장은 목표에 도달하면 멈춘다.
+    if args.max_new_per_class is not None:
+        goal_per_class = min(args.max_new_per_class, len(target_cand))
+        want = min(len(target_cand), int(np.ceil(goal_per_class * args.oversample)))
+        idx = rng.choice(len(target_cand), size=want, replace=False)
         target_cand = [target_cand[i] for i in sorted(idx)]
-    n_new = len(target_cand)
+    else:
+        goal_per_class = len(target_cand)
+    n_new = goal_per_class
 
     pillars = {"vehicle": [], "speech": [], "domestic": []}
     for f, (labs, vol) in gt.items():
@@ -323,21 +355,26 @@ def main():
             pillars["speech"].append((f, labs, vol))
         elif labs & PILLAR_DOMESTIC:
             pillars["domestic"].append((f, labs, vol))
-    quota = {"vehicle": round(n_new * PILLAR_RATIO[0]),
-             "speech": round(n_new * PILLAR_RATIO[1])}
-    quota["domestic"] = n_new - quota["vehicle"] - quota["speech"]
+    n_others = args.n_others if args.n_others is not None else n_new
+    quota = {"vehicle": round(n_others * PILLAR_RATIO[0]),
+             "speech": round(n_others * PILLAR_RATIO[1])}
+    quota["domestic"] = n_others - quota["vehicle"] - quota["speech"]
     others_cand = []
     for k in ("vehicle", "speech", "domestic"):
         pool = pillars[k]
-        take = min(quota[k], len(pool))
+        # others 도 같은 비율로 오버샘플해 품질 탈락분을 대체한다.
+        take = min(int(np.ceil(quota[k] * args.oversample)), len(pool))
         idx = rng.choice(len(pool), size=take, replace=False)
         others_cand += [pool[i] for i in sorted(idx)]
 
-    print(f"[계획] {args.target_class}: 신규 {n_new}개 "
+    print(f"[계획] {args.target_class}: 목표 {n_new}개 / 후보 {len(target_cand)}개 "
           f"(dev {sum(1 for c in target_cand if c[2]=='dev')}/"
           f"eval {sum(1 for c in target_cand if c[2]=='eval')})")
-    print(f"[계획] others: 신규 {len(others_cand)}개 "
+    print(f"[계획] others: 목표 {n_others}개 / 후보 {len(others_cand)}개 "
           f"(vehicle {quota['vehicle']}/speech {quota['speech']}/domestic {quota['domestic']})")
+    if not args.no_quality_check:
+        print(f"[품질] 길이 {args.min_duration}초 미만·안들림·클리핑 클립은 채택하지 않고 "
+              f"다음 후보로 대체합니다.")
 
     if args.dry_run:
         print("[DRY RUN] 다운로드는 하지 않고 종료합니다.")
@@ -357,21 +394,33 @@ def main():
     print(f"[INFO] provenance 백업: {os.path.basename(backup)}")
     os.makedirs(data_dir, exist_ok=True)
 
-    new_rows, failed = [], []
+    new_rows, failed, rejected = [], [], []
     jobs = ([(args.target_class, c) for c in target_cand]
             + [("others", c) for c in others_cand])
     counters = {args.target_class: next_index(data_dir, f"{args.target_class}_{args.split}_"),
                 "others": next_index(data_dir, f"others_{args.split}_")}
+    goal = {args.target_class: n_new, "others": n_others}
+    saved = {args.target_class: 0, "others": 0}
     t0 = time.time()
     for i, (cls, (fname, labs, vol)) in enumerate(jobs, 1):
+        if saved[cls] >= goal[cls]:
+            continue                    # 목표를 채웠으면 내려받지 않는다(네트워크 절약)
         key = str(fname)
         try:
             raw = readers[vol].extract(key)
             x = to_mono_16k_float32(raw)
+            # [추가 2026-07-31] 저장 전에 품질을 본다. 미달이면 채택하지 않고 다음 후보로 넘어간다.
+            if not args.no_quality_check:
+                reason = check_waveform(x, 16000, min_duration=args.min_duration)
+                if reason:
+                    rejected.append((fname, cls, reason))
+                    time.sleep(0.15)
+                    continue
             local_name = f"{cls}_{args.split}_{counters[cls]:03d}.wav"
             out_path = os.path.join(data_dir, local_name)
             sf.write(out_path, x, 16000, subtype="FLOAT")
             counters[cls] += 1
+            saved[cls] += 1
             new_rows.append({
                 "local_filename": local_name, "fsd50k_fname": fname,
                 "fsd50k_split": vol, "original_labels": ",".join(sorted(labs)),
@@ -380,19 +429,44 @@ def main():
                 "sha256": hashlib.sha256(open(out_path, "rb").read()).hexdigest(),
                 "source_volume": vol, "size_bytes": os.path.getsize(out_path),
                 "download_date": date.today().isoformat(), "source_type": "original",
+                "source": "fsd50k", "duration_sec": round(len(x) / 16000, 3),
+                # [수정 2026-07-31] active 판정 컬럼을 빠뜨리면 여기서 받은 행이 NaN 이 되어
+                # resplit_dataset(active 만 대상) 에서 통째로 제외된다. 받아 놓고 안 쓰이는 셈이라
+                # 눈에 띄지도 않는다. augment_density 에서 같은 누락을 2026-07-26 에 고쳤는데
+                # fetcher 에는 남아 있었다.
+                ACTIVE_COLUMN: "active",
             })
         except Exception as e:
             failed.append((fname, cls, str(e)))
             print(f"[WARN] 실패 {fname}({cls}): {e}")
-        if i % 20 == 0 or i == len(jobs):
+        if len(new_rows) and len(new_rows) % 20 == 0:
             merged = pd.concat([prov, pd.DataFrame(new_rows)], ignore_index=True)
             merged.to_excel(prov_path, index=False)
             el = time.time() - t0
-            print(f"[진행] {i}/{len(jobs)} (실패 {len(failed)}) — "
+            print(f"[진행] 저장 {saved[args.target_class]}/{goal[args.target_class]} + "
+                  f"{saved['others']}/{goal['others']} "
+                  f"(품질탈락 {len(rejected)}, 실패 {len(failed)}) — "
                   f"{el/60:.1f}분 경과, provenance 중간 저장")
         time.sleep(0.15)   # Zenodo 부하/rate limit 배려
 
-    print(f"\n[완료] 신규 저장 {len(new_rows)}개, 실패 {len(failed)}개")
+    if new_rows:
+        merged = pd.concat([prov, pd.DataFrame(new_rows)], ignore_index=True)
+        merged.to_excel(prov_path, index=False)
+
+    for cls in goal:
+        if saved[cls] < goal[cls]:
+            print(f"[WARN] {cls}: 목표 {goal[cls]}개 중 {saved[cls]}개만 채웠습니다. "
+                  f"--oversample 을 올리거나 후보 풀을 늘리십시오.")
+    if rejected:
+        from collections import Counter
+        print(f"\n[품질탈락] {len(rejected)}개(저장하지 않고 다음 후보로 대체)")
+        for r, c in Counter(x[2].split("(")[0].rstrip("0123456789. ")
+                            for x in rejected).most_common():
+            print(f"  {r}: {c}개")
+        for f, c, r in rejected[:10]:
+            print(f"  - {f} ({c}): {r}")
+
+    print(f"\n[완료] 신규 저장 {len(new_rows)}개, 품질탈락 {len(rejected)}개, 실패 {len(failed)}개")
     if failed:
         print("실패 목록(재실행하면 이어서 시도됨 — 이미 받은 것은 provenance 로 중복 방지):")
         for f, c, e in failed[:20]:

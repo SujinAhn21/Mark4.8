@@ -44,6 +44,11 @@ import torchaudio.functional as AF
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))          # preprocessing
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
+# 수집 기준과 사후 검증 기준이 어긋나지 않도록 판정 함수를 validate_dataset 과 공유한다.
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+from validate_dataset import check_waveform                     # noqa: E402
+
 TARGET_SR = 16000
 SEG_SEC = 3.0
 MIN_SEG_RMS = 1e-3          # 이보다 낮으면 사실상 무음 창으로 보고 다른 annotation 시도
@@ -157,6 +162,8 @@ def main():
     ap.add_argument("--others_train", type=int, default=400)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--dry_run", action="store_true")
+    ap.add_argument("--no_quality_check", action="store_true",
+                    help="잘라낸 3초의 품질 검사를 끄고 예전처럼 그대로 저장(권장하지 않음)")
     args = ap.parse_args()
 
     rng = np.random.default_rng(args.seed)
@@ -202,10 +209,15 @@ def main():
     dog_pool.sort(key=lambda t: (t[0], t[1], t[4]))
     rng.shuffle(dog_pool)
     jobs = []           # (split, class, volume, category, dir, label_dir, wav)
+    # [추가 2026-07-31] 품질 미달 클립을 대체할 예비 풀. 키는 ("dog_bark", None) / ("others", 카테고리).
+    # 이전에는 전 창이 무음에 가까워도 경고만 찍고 그대로 저장해서, 2026-07-31 수집분 117개 중
+    # 3개가 rms 0.0006~0.001(사실상 안 들림)로 학습 데이터에 들어갔다.
+    spare = {}
     pos = 0
     for sp, n in (("val", args.dog_val), ("test", args.dog_test), ("train", args.dog_train)):
         jobs += [(sp, "dog_bark") + t for t in dog_pool[pos:pos + n]]
         pos += n
+    spare[("dog_bark", None)] = list(dog_pool[pos:])
 
     # others: 카테고리 균등 배분(한 카테고리 안에서 셔플 후 val->test->train 순서로 잘라 배타 보장)
     n_cats = len(others_cats)
@@ -225,6 +237,8 @@ def main():
             jobs += [(sp, "others", c["volume"], c["category"], c["dir"], c["label_dir"], w)
                      for w in wavs[p:p + q]]
             p += q
+        spare[("others", c["category"])] = [
+            (c["volume"], c["category"], c["dir"], c["label_dir"], w) for w in wavs[p:]]
 
     plan = {}
     for j in jobs:
@@ -244,7 +258,7 @@ def main():
     # provenance 에 이미 기록된 모든 이름(제거된 행 포함) — 번호 재사용 방지에 사용
     prov_names = set(prov["local_filename"].astype(str))
 
-    counters, new_rows, warned, skipped = {}, [], [], []
+    counters, new_rows, warned, skipped, rejected = {}, [], [], [], []
     t0 = time.time()
     for i, (sp, cls, vol, cat, cdir, ldir, wav) in enumerate(jobs, 1):
         data_dir = os.path.join(PROJECT_ROOT, "data", sp)
@@ -252,20 +266,43 @@ def main():
         key = (sp, cls)
         if key not in counters:
             counters[key] = next_index(data_dir, f"{cls}_{sp}_", prov_names)
-        try:
-            label_path = os.path.join(ldir, os.path.splitext(wav)[0] + ".json") if ldir else None
-            x, sr, dur, start, end, text = pick_window(os.path.join(cdir, wav), label_path, rng)
-            seg = slice_resample(x, sr, start, end)
-            if float(np.sqrt(np.mean(seg ** 2))) < MIN_SEG_RMS:
-                warned.append((wav, cat))
-            local_name = f"{cls}_{sp}_{counters[key]:03d}.wav"
-            out_path = os.path.join(data_dir, local_name)
-            sf.write(out_path, seg, TARGET_SR, subtype="FLOAT")
-        except Exception as e:
-            # 원본 클립 하나가 깨져도(예: Format not recognised) 전체를 죽이지 않고 건너뛴다.
-            skipped.append((sp, cls, cat, wav, str(e)))
-            print(f"[SKIP] {sp}/{cls} {cat}/{wav}: {e}")
-            continue
+        # [변경 2026-07-31] 잘라낸 3초가 품질 기준에 미달하면 저장하지 않고, 같은 카테고리의
+        # 예비 클립으로 대체한다(예비가 떨어지면 그때 포기). 기준은 validate_dataset 과 공유한다.
+        spare_key = ("dog_bark", None) if cls == "dog_bark" else ("others", cat)
+        cur = (vol, cat, cdir, ldir, wav)
+        seg = local_name = out_path = None
+        tries = 0
+        while True:
+            tries += 1
+            _vol, _cat, _cdir, _ldir, _wav = cur
+            try:
+                label_path = (os.path.join(_ldir, os.path.splitext(_wav)[0] + ".json")
+                              if _ldir else None)
+                x, sr, dur, start, end, text = pick_window(
+                    os.path.join(_cdir, _wav), label_path, rng)
+                cand = slice_resample(x, sr, start, end)
+            except Exception as e:
+                # 원본 클립 하나가 깨져도(예: Format not recognised) 전체를 죽이지 않는다.
+                skipped.append((sp, cls, _cat, _wav, str(e)))
+                print(f"[SKIP] {sp}/{cls} {_cat}/{_wav}: {e}")
+                cand = None
+            if cand is not None:
+                bad = (check_waveform(cand, TARGET_SR, min_duration=SEG_SEC)
+                       if not args.no_quality_check else None)
+                if bad is None:
+                    seg, wav, cat, vol = cand, _wav, _cat, _vol
+                    break
+                rejected.append((_wav, _cat, bad))
+            if not spare.get(spare_key):
+                break                       # 대체할 예비가 없다
+            cur = spare[spare_key].pop()
+        if seg is None:
+            continue                        # 이 job 은 채우지 못했다(마지막에 경고)
+        if float(np.sqrt(np.mean(seg ** 2))) < MIN_SEG_RMS:
+            warned.append((wav, cat))
+        local_name = f"{cls}_{sp}_{counters[key]:03d}.wav"
+        out_path = os.path.join(data_dir, local_name)
+        sf.write(out_path, seg, TARGET_SR, subtype="FLOAT")
         counters[key] += 1
         new_rows.append({
             "local_filename": local_name, "original_labels": text or cat.split("_")[-1],
@@ -293,6 +330,14 @@ def main():
         print(f"[WARN] 원본 손상 등으로 건너뛴 클립 {len(skipped)}개(계획보다 그만큼 부족):")
         for sp, cls, cat, w, e in skipped[:20]:
             print(f"  - {sp}/{cls} {cat}/{w}: {e}")
+    if rejected:
+        print(f"[품질탈락] {len(rejected)}개(저장하지 않고 예비 클립으로 대체):")
+        for w, c, r in rejected[:10]:
+            print(f"  - {w} ({c}): {r}")
+    for (sp, cls), want in sorted(plan.items()):
+        got = made.get((sp, cls), 0)
+        if got < want:
+            print(f"[WARN] {sp}/{cls}: 계획 {want}개 중 {got}개만 채웠습니다(예비 클립 소진).")
     if warned:
         print(f"[WARN] 전 창이 저 RMS 라 첫 후보를 그대로 쓴 클립 {len(warned)}개(품질 확인 권장):")
         for w, c in warned[:10]:
