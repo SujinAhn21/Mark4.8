@@ -409,11 +409,20 @@ def main():
         print("[건너뜀] provenance 대조(--skip_provenance)")
     elif os.path.exists(prov_path):
         prov = pd.read_excel(prov_path)
-        if a.active_column in prov.columns:
-            act = prov[prov[a.active_column] == "active"]
+        # [변경 2026-08-01] provenance 는 mark4.x 전 버전이 한 파일을 공유한다. 디스크와 대조할 때는
+        # 이 버전의 행만 봐야 한다. 안 그러면 mark4.6 을 검증할 때 mark4.8 행 2,860개가 전부
+        # MISSING_FILE 로 잡혀서 진짜 문제가 그 안에 묻힌다.
+        # prov 자체는 아래 --update_provenance / --quarantine 이 파일 전체를 다시 쓰는 데 쓰이므로
+        # 원본 그대로 두고, 걸러낸 것은 scoped 로 따로 둔다.
+        scoped = prov
+        if "mark_version" in prov.columns:
+            scoped = prov[prov["mark_version"] == a.mark_version]
+            print(f"[INFO] provenance 전체 {len(prov)}행 중 {a.mark_version} {len(scoped)}행으로 대조")
+        if a.active_column in scoped.columns:
+            act = scoped[scoped[a.active_column] == "active"]
         else:
             print(f"[WARN] provenance 에 '{a.active_column}' 컬럼이 없어 전체를 active 로 봅니다")
-            act = prov
+            act = scoped
         pv = set(act["local_filename"].astype(str))
         dk = set(df["filename"])
         only_disk, only_prov = dk - pv, pv - dk
@@ -503,17 +512,22 @@ def main():
         bak = prov_path + f".bak_before_validate_{time.strftime('%Y%m%d_%H%M%S')}"
         shutil.copy2(prov_path, bak)
         meas = df.set_index("filename")
+        # [추가 2026-08-01] 파일명만 보고 행을 찾으면 다른 버전의 같은 이름 행에 측정치가 덮인다
+        # (others_train_001.wav 는 모든 mark 버전에 생긴다). 이 버전의 행에만 쓴다.
+        ismine = ((prov["mark_version"] == a.mark_version) if "mark_version" in prov.columns
+                  else pd.Series(True, index=prov.index))
         for col, src in [("duration_sec", "duration_sec"), ("active_sec", "active_sec"),
                          ("pad_ratio", "pad_ratio"), ("rms", "rms"), ("peak", "peak"),
                          ("clip_ratio", "clip_ratio"), ("silence_ratio", "silence_ratio"),
                          ("max_silence_sec", "max_silence_sec")]:
             if col not in prov.columns:
                 prov[col] = np.nan
-            prov[col] = prov["local_filename"].astype(str).map(
-                meas[src] if src in meas.columns else {}).combine_first(prov[col])
+            mapped = prov["local_filename"].astype(str).map(
+                meas[src] if src in meas.columns else {})
+            prov[col] = mapped.where(ismine).combine_first(prov[col])
         if "validated_date" not in prov.columns:
             prov["validated_date"] = pd.NA
-        hit = prov["local_filename"].astype(str).isin(set(df["filename"]))
+        hit = prov["local_filename"].astype(str).isin(set(df["filename"])) & ismine
         prov.loc[hit, "validated_date"] = time.strftime("%Y-%m-%d")
         prov.to_excel(prov_path, index=False)
         print(f"[저장] provenance 갱신({int(hit.sum())}행에 측정치 기록) — 백업 {os.path.basename(bak)}")
@@ -545,6 +559,10 @@ def main():
                 if col not in prov.columns:
                     prov[col] = "active"
                 hit = prov["local_filename"].astype(str).isin(set(moved)) & (prov[col] == "active")
+                # [추가 2026-08-01] 같은 파일명이 다른 버전에도 있을 수 있으므로 버전 조건을 건다.
+                # 이게 없으면 4.6 에서 격리한 파일 때문에 4.8 의 멀쩡한 행이 '제거'로 표시된다.
+                if "mark_version" in prov.columns:
+                    hit &= (prov["mark_version"] == a.mark_version)
                 prov.loc[hit, col] = prov.loc[hit, "local_filename"].astype(str).map(reasons)
                 prov.to_excel(prov_path, index=False)
                 print(f"[격리] provenance {int(hit.sum())}행에 사유 기록 — 백업 {os.path.basename(bak)}")

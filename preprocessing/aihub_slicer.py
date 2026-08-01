@@ -10,8 +10,9 @@ AI Hub 71296(주거공간 실녹음, 전 클립 15초/48kHz/16bit/모노, 소리
 1. data_provenance.xlsx 의 active 행과 data/{train,val,test} 실파일을 대조(고아 파일 시 중단),
    aihub_src_file 로 이미 쓴 원본 클립은 건너뛴다(중복 방지).
 2. 원본 클립 풀을 만든다.
-   - dog_bark: '강아지' 카테고리(VS 106 + TS 845 = 951클립)를 섞어 val/test/train 에 배타 배정.
-   - others: VS 37개 카테고리(강아지 제외)에서 카테고리 균등 배분으로 val/test/train 배정.
+   - 타겟 클래스: --target_keyword 로 고른 AI Hub 카테고리(TS+VS)를 섞어 val/test/train 에 배타 배정.
+     예) mark4.8 은 '강아지'(VS 106 + TS 845 = 951클립), mark4.6 은 '화장실물내리는소리'(VS 105 + TS 839).
+   - others: 타겟 카테고리를 뺀 VS 카테고리에서 카테고리 균등 배분으로 val/test/train 배정.
    같은 원본 클립은 한 split 에만 들어간다(클립당 세그먼트 1개).
 3. 라벨 json 의 annotation 중 가장 긴 구간의 중앙에 3초 창을 맞춰(클립 경계로 클램프) 자르고,
    48kHz -> 16kHz 리샘플 + 모노 + float32 로 data/{split}/{class}_{split}_{NNN}.wav 저장
@@ -22,11 +23,19 @@ AI Hub 71296(주거공간 실녹음, 전 클립 15초/48kHz/16bit/모노, 소리
 
 주의: AI Hub 데이터는 재배포 금지 — 생성된 wav 를 wav 커밋 repo(Mark4.8)에 푸시하지 않는다.
 
+[변경 2026-08-01] mark4.1~4.7 도 같은 코드로 수집하기 위해 타겟 클래스를 인자로 뺐다.
+이전에는 DOG_KEYWORD = "강아지" 와 --dog_* 인자가 소스에 박혀 있어 4.8 전용이었다.
+타겟 클래스명은 --target_class 로 직접 줄 수도 있고, 안 주면 vild_config.py 에서 읽는다
+(generate_dataset_index 의 키워드 맵과 어긋나지 않게 하려는 것이다).
+
 사용 예:
-  python preprocessing/aihub_slicer.py --mark_version mark4.8 --dry_run
-  python preprocessing/aihub_slicer.py --mark_version mark4.8
+  python preprocessing/aihub_slicer.py --mark_version mark4.8 --target_keyword 강아지 --dry_run
+  python preprocessing/aihub_slicer.py --mark_version mark4.6 --target_keyword 화장실물내리는소리 \
+      --target_val 215 --target_test 215 --target_train 514 \
+      --others_val 215 --others_test 215 --others_train 514 --dry_run
 """
 import os
+import re
 import sys
 import json
 import time
@@ -52,7 +61,26 @@ from validate_dataset import check_waveform                     # noqa: E402
 TARGET_SR = 16000
 SEG_SEC = 3.0
 MIN_SEG_RMS = 1e-3          # 이보다 낮으면 사실상 무음 창으로 보고 다른 annotation 시도
-DOG_KEYWORD = "강아지"
+
+
+def target_class_from_config(mark_version):
+    """vild_config.py 에서 이 mark 버전의 타겟 클래스명을 읽는다(예: mark4.6 -> water_toilet).
+
+    vild_config 를 import 하지 않고 소스를 텍스트로 읽어 정규식으로 뽑는다. import 하면 torch 까지
+    딸려오는데 /mnt/c 의 venv 에서는 그것만 76초가 걸린다(2026-07-31 실측).
+    클래스명을 손으로 적지 않고 config 에서 읽는 이유는, generate_dataset_index 의 키워드 맵이
+    같은 이름을 쓰기 때문이다. 둘이 어긋나면 잘라낸 wav 가 인덱스에서 통째로 빠진다.
+    """
+    cfg_path = os.path.join(PROJECT_ROOT, "vild", "vild_config.py")
+    src = open(cfg_path, encoding="utf-8").read()
+    m = re.search(
+        r'mark_version\s*==\s*["\']%s["\'][^\n]*\n\s*self\.classes\s*=\s*\[\s*["\']([^"\']+)["\']'
+        % re.escape(mark_version), src)
+    if not m:
+        raise SystemExit(
+            f"[ERROR] {cfg_path} 에서 '{mark_version}' 의 클래스 정의를 찾지 못했습니다.\n"
+            f"        --target_class 로 직접 지정하십시오.")
+    return m.group(1)
 
 
 def _max_index(names, prefix):
@@ -153,10 +181,16 @@ def main():
                     default=os.path.expanduser("~/workspace/aihub_raw/71296/extracted"))
     ap.add_argument("--provenance_path", type=str,
                     default=os.path.join(PROJECT_ROOT, "..", "data_provenance.xlsx"))
-    # 2026-07-15 확정 계획: val 개+150/others+151, test 개+151/others+152, train 개+400/others+400
-    ap.add_argument("--dog_val", type=int, default=150)
-    ap.add_argument("--dog_test", type=int, default=151)
-    ap.add_argument("--dog_train", type=int, default=400)
+    ap.add_argument("--target_class", type=str, default=None,
+                    help="타겟 클래스명. 생략하면 vild_config.py 에서 mark_version 으로 읽는다.")
+    ap.add_argument("--target_keyword", type=str, required=True,
+                    help="AI Hub 카테고리 폴더명에 들어 있는 문자열(부분일치). 쉼표로 여러 개 가능. "
+                         "예: 강아지 / 화장실물내리는소리 / 어른발걸음소리,아이들발걸음소리,망치질소리")
+    # 2026-07-15 확정 계획(mark4.8): val 타겟+150/others+151, test +151/+152, train +400/+400
+    # --dog_* 는 4.8 때 쓰던 이름으로, 기존 명령이 그대로 돌아가도록 별칭으로 남겨둔다.
+    ap.add_argument("--target_val", "--dog_val", dest="target_val", type=int, default=150)
+    ap.add_argument("--target_test", "--dog_test", dest="target_test", type=int, default=151)
+    ap.add_argument("--target_train", "--dog_train", dest="target_train", type=int, default=400)
     ap.add_argument("--others_val", type=int, default=151)
     ap.add_argument("--others_test", type=int, default=152)
     ap.add_argument("--others_train", type=int, default=400)
@@ -168,10 +202,20 @@ def main():
 
     rng = np.random.default_rng(args.seed)
     prov_path = os.path.abspath(args.provenance_path)
+    target_class = args.target_class or target_class_from_config(args.mark_version)
+    keywords = [k.strip() for k in args.target_keyword.split(",") if k.strip()]
+    if not keywords:
+        raise SystemExit("[ERROR] --target_keyword 가 비어 있습니다.")
+    print(f"[INFO] mark_version={args.mark_version}  타겟 클래스={target_class}  "
+          f"카테고리 키워드={keywords}")
 
     # 1) provenance 대조: 고아 파일 점검 + 이미 쓴 aihub 원본 클립 파악
     prov = pd.read_excel(prov_path)
-    active = prov[prov["removed_20260715"] == "active"] if "removed_20260715" in prov.columns else prov
+    # [변경 2026-08-01] provenance 는 mark4.x 전 버전이 한 파일을 공유한다. 고아 검사와 '이미 쓴 원본'
+    # 판정은 이 버전의 행만 봐야 한다. 버전을 안 거르면 4.6 을 수집할 때 4.8 이 쓴 others 클립까지
+    # 사용 불가로 잡혀서, 버전이 늘수록 others 풀이 말라붙는다(7개 버전이면 가용 4,714개를 넘어 고갈).
+    mine = prov[prov["mark_version"] == args.mark_version] if "mark_version" in prov.columns else prov
+    active = mine[mine["removed_20260715"] == "active"] if "removed_20260715" in mine.columns else mine
     known_files = set(active["local_filename"].astype(str))
     for sp in ("train", "val", "test"):
         sp_dir = os.path.join(PROJECT_ROOT, "data", sp)
@@ -185,39 +229,51 @@ def main():
             print("이 파일들을 정리(삭제 또는 provenance 반영)한 뒤 다시 실행하십시오.")
             sys.exit(1)
     used_src = set()
-    if "aihub_src_file" in prov.columns:
-        used_src = set(prov.loc[prov["aihub_src_file"].notna(), "aihub_src_file"].astype(str))
-    print(f"[INFO] provenance {len(prov)}행(active {len(active)}), 기존 aihub 원본 {len(used_src)}개")
+    if "aihub_src_file" in mine.columns:
+        used_src = set(mine.loc[mine["aihub_src_file"].notna(), "aihub_src_file"].astype(str))
+    print(f"[INFO] provenance 전체 {len(prov)}행 중 {args.mark_version} {len(mine)}행"
+          f"(active {len(active)}), 이 버전이 이미 쓴 aihub 원본 {len(used_src)}개")
 
     # 2) 원본 스캔 및 풀 구성
     cats = scan_aihub(args.aihub_root)
-    dog_pool = []       # (volume, category, dir, label_dir, wav)
-    others_cats = []    # dog 를 뺀 VS 카테고리
+    target_pool = []    # (volume, category, dir, label_dir, wav)
+    others_cats = []    # 타겟 카테고리를 뺀 VS 카테고리
+    matched_cats = []
     for c in cats:
         wavs = [w for w in c["wavs"] if w not in used_src]
-        if DOG_KEYWORD in c["category"]:
-            dog_pool += [(c["volume"], c["category"], c["dir"], c["label_dir"], w) for w in wavs]
+        if any(k in c["category"] for k in keywords):
+            target_pool += [(c["volume"], c["category"], c["dir"], c["label_dir"], w) for w in wavs]
+            matched_cats.append(f"{c['volume']}:{c['category']}({len(wavs)})")
         elif c["volume"] == "VS":
             others_cats.append((c, wavs))
-    print(f"[INFO] dog 풀 {len(dog_pool)}클립, others 카테고리 {len(others_cats)}개 "
+    if not matched_cats:
+        print(f"[ERROR] --target_keyword {keywords} 에 맞는 카테고리가 {args.aihub_root} 에 없습니다.")
+        print("        해제된 카테고리 폴더 목록:")
+        for c in cats:
+            print(f"          {c['volume']}_{c['category']}")
+        sys.exit(1)
+    print(f"[INFO] 타겟({target_class}) 카테고리 {len(matched_cats)}개: {', '.join(matched_cats)}")
+    print(f"[INFO] 타겟 풀 {len(target_pool)}클립, others 카테고리 {len(others_cats)}개 "
           f"(클립 {sum(len(w) for _, w in others_cats)}개)")
 
-    # dog: 풀 전체를 섞어 val/test/train 배타 배정
-    need_dog = args.dog_val + args.dog_test + args.dog_train
-    if len(dog_pool) < need_dog:
-        print(f"[ERROR] dog 클립 부족: 필요 {need_dog}, 가용 {len(dog_pool)}"); sys.exit(1)
-    dog_pool.sort(key=lambda t: (t[0], t[1], t[4]))
-    rng.shuffle(dog_pool)
+    # 타겟: 풀 전체를 섞어 val/test/train 배타 배정
+    need_target = args.target_val + args.target_test + args.target_train
+    if len(target_pool) < need_target:
+        print(f"[ERROR] {target_class} 클립 부족: 필요 {need_target}, 가용 {len(target_pool)}")
+        sys.exit(1)
+    target_pool.sort(key=lambda t: (t[0], t[1], t[4]))
+    rng.shuffle(target_pool)
     jobs = []           # (split, class, volume, category, dir, label_dir, wav)
-    # [추가 2026-07-31] 품질 미달 클립을 대체할 예비 풀. 키는 ("dog_bark", None) / ("others", 카테고리).
+    # [추가 2026-07-31] 품질 미달 클립을 대체할 예비 풀. 키는 (타겟클래스, None) / ("others", 카테고리).
     # 이전에는 전 창이 무음에 가까워도 경고만 찍고 그대로 저장해서, 2026-07-31 수집분 117개 중
     # 3개가 rms 0.0006~0.001(사실상 안 들림)로 학습 데이터에 들어갔다.
     spare = {}
     pos = 0
-    for sp, n in (("val", args.dog_val), ("test", args.dog_test), ("train", args.dog_train)):
-        jobs += [(sp, "dog_bark") + t for t in dog_pool[pos:pos + n]]
+    for sp, n in (("val", args.target_val), ("test", args.target_test),
+                  ("train", args.target_train)):
+        jobs += [(sp, target_class) + t for t in target_pool[pos:pos + n]]
         pos += n
-    spare[("dog_bark", None)] = list(dog_pool[pos:])
+    spare[(target_class, None)] = list(target_pool[pos:])
 
     # others: 카테고리 균등 배분(한 카테고리 안에서 셔플 후 val->test->train 순서로 잘라 배타 보장)
     n_cats = len(others_cats)
@@ -255,7 +311,11 @@ def main():
     if "source" not in prov.columns:
         prov["source"] = "fsd50k"      # 기존 행 전부 FSD50K 유래(증강본 포함)
 
-    # provenance 에 이미 기록된 모든 이름(제거된 행 포함) — 번호 재사용 방지에 사용
+    # provenance 에 이미 기록된 모든 이름(제거된 행 포함) — 번호 재사용 방지에 사용.
+    # [주의 2026-08-01] 여기는 일부러 버전으로 거르지 않는다. validate_dataset 의 --update_provenance /
+    # --quarantine 이 local_filename 만 보고 행을 찾기 때문에, 버전이 달라도 파일명이 겹치면 다른
+    # 버전 행에 측정치가 덮이거나 엉뚱한 행이 제거로 표시된다(others_train_001.wav 는 모든 버전에
+    # 생긴다). 그래서 번호를 전 버전 통틀어 이어붙여 파일명이 겹치지 않게 한다.
     prov_names = set(prov["local_filename"].astype(str))
 
     counters, new_rows, warned, skipped, rejected = {}, [], [], [], []
@@ -268,7 +328,7 @@ def main():
             counters[key] = next_index(data_dir, f"{cls}_{sp}_", prov_names)
         # [변경 2026-07-31] 잘라낸 3초가 품질 기준에 미달하면 저장하지 않고, 같은 카테고리의
         # 예비 클립으로 대체한다(예비가 떨어지면 그때 포기). 기준은 validate_dataset 과 공유한다.
-        spare_key = ("dog_bark", None) if cls == "dog_bark" else ("others", cat)
+        spare_key = (target_class, None) if cls == target_class else ("others", cat)
         cur = (vol, cat, cdir, ldir, wav)
         seg = local_name = out_path = None
         tries = 0

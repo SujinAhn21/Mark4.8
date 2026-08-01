@@ -136,7 +136,12 @@ class AudioViLDConfig:
         # 순수 개선이었음. 0.42는 dog recall이 0.930으로 미세하게 높으나 FP가 23개로 늘어 기각.
         # 선정 도구: model/tune_threshold.py - eval.py가 남긴 prediction_details CSV만 읽어
         # 재계산하므로 모델 재실행이 필요 없다. 저장된 예측과 430/430 일치로 재현 검증함.
-        # test 성능은 아직 미측정(재학습 직후 val만 돌린 상태).
+        # [측정 완료 2026-08-01] 이 0.43으로 test(430개) 평가 결과:
+        # accuracy 0.9186 · macro F1 0.9186 · others FPR 0.0930 · ROC AUC 0.9762
+        # (dog_bark P0.9091/R0.9302/F1 0.9195, others P0.9286/R0.9070/F1 0.9176).
+        # val 0.9163 대비 test 0.9186으로 거의 같아 val 과적합 없음. threshold와 무관한
+        # ROC AUC가 0.9428 -> 0.9762로 올라, 운영점 조정이 아니라 모델 분리력 자체가 개선됨.
+        # test 기준으로는 0.45가 0.9233으로 조금 높으나, test를 보고 고르면 안 되므로 val 최적인 0.43 유지.
         self.target_decision_threshold = 0.43
         # [삭제 2026-07-11] others_entropy_threshold 하드코딩(0.72) 제거.
         # 원인 규명: 2-class(mark4.x) 이진분류에서 정규화 entropy가 0.72 이하가 되려면
