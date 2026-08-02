@@ -1,4 +1,2 @@
 data/
 *.wav
-dataset_index_*.csv
-dataset_index_*.pkl
