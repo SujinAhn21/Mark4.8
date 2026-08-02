@@ -28,11 +28,20 @@ AI Hub 71296(주거공간 실녹음, 전 클립 15초/48kHz/16bit/모노, 소리
 타겟 클래스명은 --target_class 로 직접 줄 수도 있고, 안 주면 vild_config.py 에서 읽는다
 (generate_dataset_index 의 키워드 맵과 어긋나지 않게 하려는 것이다).
 
+[변경 2026-08-02] 타겟 개수를 전부 0 으로 주면 others 만 만든다. mark4.5(media_talking)는 타겟
+소리(TV·미디어 재생음)가 AI Hub 에 없어 VOiCES 에서 가져오고(longwav_slicer.py), others 만 여기서
+만들기 때문이다. 겸사겸사 --exclude_keyword 로 others 에서 특정 카테고리를 뺄 수 있게 했다
+(mark4.5 는 '옥외설치확성기의소음'이 스피커 재생음이라 타겟과 물리적으로 같은 종류다).
+
 사용 예:
   python preprocessing/aihub_slicer.py --mark_version mark4.8 --target_keyword 강아지 --dry_run
   python preprocessing/aihub_slicer.py --mark_version mark4.6 --target_keyword 화장실물내리는소리 \
       --target_val 215 --target_test 215 --target_train 514 \
       --others_val 215 --others_test 215 --others_train 514 --dry_run
+  # others 만 (타겟은 longwav_slicer.py 가 따로 만든다)
+  python preprocessing/aihub_slicer.py --mark_version mark4.5 \
+      --target_val 0 --target_test 0 --target_train 0 --exclude_keyword 확성기 \
+      --others_val 215 --others_test 215 --others_train 500 --dry_run
 """
 import os
 import re
@@ -183,9 +192,13 @@ def main():
                     default=os.path.join(PROJECT_ROOT, "..", "data_provenance.xlsx"))
     ap.add_argument("--target_class", type=str, default=None,
                     help="타겟 클래스명. 생략하면 vild_config.py 에서 mark_version 으로 읽는다.")
-    ap.add_argument("--target_keyword", type=str, required=True,
+    ap.add_argument("--target_keyword", type=str, default=None,
                     help="AI Hub 카테고리 폴더명에 들어 있는 문자열(부분일치). 쉼표로 여러 개 가능. "
-                         "예: 강아지 / 화장실물내리는소리 / 어른발걸음소리,아이들발걸음소리,망치질소리")
+                         "예: 강아지 / 화장실물내리는소리 / 어른발걸음소리,아이들발걸음소리,망치질소리. "
+                         "타겟 개수를 전부 0으로 주면(others 만 만들 때) 생략할 수 있다.")
+    ap.add_argument("--exclude_keyword", type=str, default=None,
+                    help="others 에서 뺄 카테고리 키워드(쉼표로 여러 개). "
+                         "예: mark4.5 는 확성기 재생음이 타겟(미디어 재생음)과 겹쳐 '확성기'를 뺀다.")
     # 2026-07-15 확정 계획(mark4.8): val 타겟+150/others+151, test +151/+152, train +400/+400
     # --dog_* 는 4.8 때 쓰던 이름으로, 기존 명령이 그대로 돌아가도록 별칭으로 남겨둔다.
     ap.add_argument("--target_val", "--dog_val", dest="target_val", type=int, default=150)
@@ -203,11 +216,17 @@ def main():
     rng = np.random.default_rng(args.seed)
     prov_path = os.path.abspath(args.provenance_path)
     target_class = args.target_class or target_class_from_config(args.mark_version)
-    keywords = [k.strip() for k in args.target_keyword.split(",") if k.strip()]
-    if not keywords:
-        raise SystemExit("[ERROR] --target_keyword 가 비어 있습니다.")
+    keywords = [k.strip() for k in (args.target_keyword or "").split(",") if k.strip()]
+    excludes = [k.strip() for k in (args.exclude_keyword or "").split(",") if k.strip()]
+    need_target = args.target_val + args.target_test + args.target_train
+    # [변경 2026-08-02] 타겟을 AI Hub 밖에서 가져오는 버전(mark4.5 = VOiCES)을 위해, 타겟 개수를
+    # 전부 0 으로 주면 others 만 만들 수 있게 했다. 그때는 --target_keyword 가 필요 없다.
+    if need_target > 0 and not keywords:
+        raise SystemExit("[ERROR] --target_keyword 가 비어 있습니다"
+                         "(타겟 개수를 전부 0 으로 주면 생략할 수 있습니다).")
     print(f"[INFO] mark_version={args.mark_version}  타겟 클래스={target_class}  "
-          f"카테고리 키워드={keywords}")
+          f"카테고리 키워드={keywords or '(없음 — others 만 만든다)'}"
+          + (f"  others 제외={excludes}" if excludes else ""))
 
     # 1) provenance 대조: 고아 파일 점검 + 이미 쓴 aihub 원본 클립 파악
     prov = pd.read_excel(prov_path)
@@ -239,25 +258,31 @@ def main():
     target_pool = []    # (volume, category, dir, label_dir, wav)
     others_cats = []    # 타겟 카테고리를 뺀 VS 카테고리
     matched_cats = []
+    excluded_cats = []
     for c in cats:
         wavs = [w for w in c["wavs"] if w not in used_src]
-        if any(k in c["category"] for k in keywords):
+        if keywords and any(k in c["category"] for k in keywords):
             target_pool += [(c["volume"], c["category"], c["dir"], c["label_dir"], w) for w in wavs]
             matched_cats.append(f"{c['volume']}:{c['category']}({len(wavs)})")
         elif c["volume"] == "VS":
+            if any(k in c["category"] for k in excludes):
+                excluded_cats.append(c["category"])
+                continue
             others_cats.append((c, wavs))
-    if not matched_cats:
+    if need_target > 0 and not matched_cats:
         print(f"[ERROR] --target_keyword {keywords} 에 맞는 카테고리가 {args.aihub_root} 에 없습니다.")
         print("        해제된 카테고리 폴더 목록:")
         for c in cats:
             print(f"          {c['volume']}_{c['category']}")
         sys.exit(1)
-    print(f"[INFO] 타겟({target_class}) 카테고리 {len(matched_cats)}개: {', '.join(matched_cats)}")
+    if matched_cats:
+        print(f"[INFO] 타겟({target_class}) 카테고리 {len(matched_cats)}개: {', '.join(matched_cats)}")
+    if excluded_cats:
+        print(f"[INFO] others 에서 제외한 카테고리 {len(excluded_cats)}개: {', '.join(excluded_cats)}")
     print(f"[INFO] 타겟 풀 {len(target_pool)}클립, others 카테고리 {len(others_cats)}개 "
           f"(클립 {sum(len(w) for _, w in others_cats)}개)")
 
     # 타겟: 풀 전체를 섞어 val/test/train 배타 배정
-    need_target = args.target_val + args.target_test + args.target_train
     if len(target_pool) < need_target:
         print(f"[ERROR] {target_class} 클립 부족: 필요 {need_target}, 가용 {len(target_pool)}")
         sys.exit(1)
