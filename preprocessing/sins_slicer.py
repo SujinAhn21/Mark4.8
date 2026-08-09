@@ -339,11 +339,28 @@ def main():
             for r in items:
                 by_act[r["activity"]].append(r)
             # 활동별 쿼터만큼 먼저 뽑고, 못 채운 만큼은 여유 있는 활동에서 빌린다.
+            # 활동 안에서는 **세션을 번갈아** 꺼낸다.
+            #
+            # [2026-08-09 수정] 활동별 쿼터만으로는 세션이 안 섞인다. 타겟은 활동이
+            # watching_tv 하나뿐이라 세션 배분이 아예 일어나지 않고, 매니페스트 앞쪽 세션에서
+            # 필요량이 다 채워진다. 실제로 mark4.5 train 타겟 250개가
+            # ex227 165 / ex228 76 / ex230 9 로 몰렸고(ex234·ex235 는 0개), 그 결과 학습이
+            # 사실상 한 세션의 TV 소리만 보게 됐다. test 에서 CHiME 쪽이 val 0.9720 ->
+            # test 0.7963 으로 17.6%p 떨어진 것과 같은 구조의 문제다.
+            # 세션을 번갈아 꺼내면 train 이 여러 녹음 시간대를 고르게 보게 된다.
             queue, leftover = [], []
             for a in sorted(by_act):
                 q = quota.get(a, 0)
-                queue.extend(by_act[a][:q])
-                leftover.extend(by_act[a][q:])
+                by_sess = defaultdict(list)
+                for r in by_act[a]:
+                    by_sess[r["sess"]].append(r)
+                picked = []
+                while len(picked) < q and any(by_sess.values()):
+                    for s in sorted(by_sess):
+                        if by_sess[s] and len(picked) < q:
+                            picked.append(by_sess[s].pop(0))
+                queue.extend(picked)
+                leftover.extend(r for s in sorted(by_sess) for r in by_sess[s])
             print(f"  [{sp}/{role}] 활동별 쿼터: "
                   + ", ".join(f"{a} {quota.get(a, 0)}" for a in sorted(by_act))
                   + f"  (예비 {len(leftover)})")
